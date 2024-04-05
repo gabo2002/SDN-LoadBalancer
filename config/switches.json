@@ -1,0 +1,97 @@
+{
+    "switches": [
+        {
+            "id" : "S1",
+            "hosts" : [
+                "H1",
+                "H2"
+            ],
+            "connected_switches" : [
+                "S2",
+                "S3"
+            ]
+        },
+        {
+            "id" : "S2",
+            "hosts" : [
+            ],
+            "connected_switches" : [
+                "S3",
+                "S4",
+                "S9"
+            ]
+        },
+        {
+            "id" : "S3",
+            "hosts" : [
+                "H3",
+                "H4",
+                "H5"
+            ],
+            "connected_switches" : [
+            ]
+        },
+        {
+            "id" : "S4",
+            "hosts" : [
+                "H5",
+                "H6"
+            ],
+            "connected_switches" : [
+                "S5"
+            ]
+        },
+        {
+            "id" : "S5",
+            "hosts" : [
+                "H7",
+                "H8"
+            ],
+            "connected_switches" : [
+            ]
+        },
+        {
+            "id" : "S6",
+            "hosts" : [
+                "H7",
+                "H8",
+                "H9",
+                "H10"
+            ],
+            "connected_switches" : [
+                "S7"
+            ]
+        },
+        {
+            "id" : "S7",
+            "hosts" : [
+                "H11"
+            ],
+            "connected_switches" : [
+                "S8",
+                "S9"
+            ]
+        },
+        {
+            "id" : "S8",
+            "hosts" : [
+                "H6",
+                "H11"
+            ],
+            "connected_switches" : [
+
+            ]
+        },
+        {
+            "id" : "S9",
+            "hosts" : [
+                "H11",
+                "H12",
+                "H13"
+            ],
+            "connected_switches" : [
+                
+            ]
+        }
+    ]
+}
