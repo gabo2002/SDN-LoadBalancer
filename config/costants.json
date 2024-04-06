@@ -1,0 +1,19 @@
+{
+    "debug": true,
+    "controller_port": 6969,
+    "controller_host": "localhost",
+
+    "ansi_red": "\u001b[31m",
+    "ansi_green": "\u001b[32m",
+    "ansi_yellow": "\u001b[33m",
+    "ansi_blue": "\u001b[34m",
+    "ansi_magenta": "\u001b[35m",
+    "ansi_cyan": "\u001b[36m",
+    "ansi_white": "\u001b[38;5;231m",
+
+    "net_emote": "🕸️",
+    "error_emote": "❌",
+    "debug_emote": "🛠️",
+    "important_emote": "🔥",
+    "ping_emote": "🏓"
+}

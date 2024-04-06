@@ -1,4 +1,5 @@
 from network_topology import NetworkTopology
+from network_traffic import NetworkTraffic
 from mininet.net import Mininet
 from mininet.log import setLogLevel
 from mininet.clean import Cleanup
@@ -15,7 +16,7 @@ def main():
     topology = NetworkTopology(path)
     
     #Create a Mininet object
-    print("{}  {}NETWORK {}Creating Mininet network{}".format(costants['net_emote'], costants['ansi_red'],costants['ansi_white'],costants['ansi_white']))
+    print("\n\n{}  {}NETWORK {}Creating Mininet network{}\n\n".format(costants['net_emote'], costants['ansi_red'],costants['ansi_white'],costants['ansi_white']))
     network = Mininet(topology,controller=None,autoSetMacs=True,autoStaticArp=False)
 
     #add the controller
@@ -24,14 +25,22 @@ def main():
     network.start()
     #Dump the connections
     dumpNodeConnections(network.hosts)
-    print("{}  {}NETWORK {}Network started{}".format(costants['net_emote'], costants['ansi_green'],costants['ansi_white'],costants['ansi_white']))
+    print("\n\n{}  {}NETWORK {}Network started{}".format(costants['net_emote'], costants['ansi_green'],costants['ansi_white'],costants['ansi_white']))
+
+    #Create a network traffic object
+    traffic_controller = NetworkTraffic(network)
+
+    #Ping all the hosts to check the reachability
+    traffic_controller.ping_all()
+
+    #TODO: Generate traffic between hosts, maybe using a JSON file to specify the hosts
 
 
 if __name__ == "__main__":
     setLogLevel('info')
     #remove any existing Mininet instances
-    print("{}  {}CLEANUP {} Removing any existing Mininet instances{}".format(costants['important_emote'], costants['ansi_red'],costants['ansi_white'],costants['ansi_white']))
+    print("{}  {}CLEANUP {} Removing any existing Mininet instances{}\n\n".format(costants['important_emote'], costants['ansi_red'],costants['ansi_white'],costants['ansi_white']))
     Cleanup.cleanup()
-    print("{}  {}CLEANUP {} Mininet instances removed{}".format(costants['important_emote'], costants['ansi_green'],costants['ansi_white'],costants['ansi_white']))
+    print("\n\n{}  {}CLEANUP {} Mininet instances removed{}".format(costants['important_emote'], costants['ansi_green'],costants['ansi_white'],costants['ansi_white']))
 
     main()

@@ -29,7 +29,7 @@ costants = utils.load_costants()
 class NetworkTopology(Topo):
 
     def __init__(self, json_path):
-        print("{}  {}NETWORK INITIALIZATION {} Inizializing custom network topology from config file located in: {}{}{}\n\n".format(costants['net_emote'], costants['ansi_red'],costants['ansi_white'],costants['ansi_blue'], json_path, costants['ansi_white']))
+        print("\n\n{}  {}NETWORK TOPOLOGY {} Inizializing custom network topology from config file located in: {}{}{}\n\n".format(costants['net_emote'], costants['ansi_red'],costants['ansi_white'],costants['ansi_blue'], json_path, costants['ansi_white']))
         self.json_path = json_path
         Topo.__init__(self)
 
@@ -39,7 +39,7 @@ class NetworkTopology(Topo):
     def build(self):
         try:
             self.init_topology()
-            print("{}  {}NETWORK INITIALIZATION {} Network topology initialized{}".format(costants['net_emote'], costants['ansi_green'],costants['ansi_white'],costants['ansi_white']))
+            print("\n\n{}  {}NETWORK TOPOLOGY {} Network topology initialized{}".format(costants['net_emote'], costants['ansi_green'],costants['ansi_white'],costants['ansi_white']))
         except Exception as e:
             print_error(str(e))
             print_error("Traceback: {}".format(traceback.format_exc()))
