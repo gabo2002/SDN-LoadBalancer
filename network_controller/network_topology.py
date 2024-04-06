@@ -1,5 +1,8 @@
 import json
+import traceback
 from mininet.topo import Topo
+import utils
+from utils import print_debug,print_error
 '''
     Switch json configuration: 
 
@@ -19,22 +22,28 @@ from mininet.topo import Topo
     }
     
 '''
+
+costants = utils.load_costants()
+
 # Create a class called NetworkTopology that inherits from the Topo class in Mininet, it represents the network topology
 class NetworkTopology(Topo):
 
     def __init__(self, json_path):
+        print("{}  {}NETWORK INITIALIZATION {} Inizializing custom network topology from config file located in: {}{}{}\n\n".format(costants['net_emote'], costants['ansi_red'],costants['ansi_white'],costants['ansi_blue'], json_path, costants['ansi_white']))
         self.json_path = json_path
         Topo.__init__(self)
+
 
     # Build the network topology by initializing the switches, hosts, and links 
     # This method is called by the Mininet object when it is created
     def build(self):
         try:
             self.init_topology()
+            print("{}  {}NETWORK INITIALIZATION {} Network topology initialized{}".format(costants['net_emote'], costants['ansi_green'],costants['ansi_white'],costants['ansi_white']))
         except Exception as e:
-            print("Error: {}".format(e))
-            print("Traceback: {}".format(e.with_traceback()))
-            print("Exiting...")
+            print_error(str(e))
+            print_error("Traceback: {}".format(traceback.format_exc()))
+            print_error("Exiting...")
             exit(1)
 
     # Initialize the network topology by reading the JSON file and creating the switches, hosts, and links
@@ -47,7 +56,7 @@ class NetworkTopology(Topo):
 
         for switch in json_data['switches']:
             switch_id = str(switch['id'])
-            print("Creating switch {}".format(switch_id))
+            print_debug("Creating switch {}".format(switch_id))
             self.my_switches.append(self.addSwitch(switch_id))
 
             # Create hosts
@@ -60,7 +69,7 @@ class NetworkTopology(Topo):
                 
                 host = self.addHost(host_id)
                 self.my_hosts.append(host)
-                print("Creating host {} linked to switch: {}".format(host_id,switch_id))
+                print_debug("Creating host {} linked to switch: {}".format(host_id,switch_id))
                 self.addLink(host, self.my_switches[-1])
             
         #create switch links
@@ -68,7 +77,7 @@ class NetworkTopology(Topo):
             switch_id = str(switch['id'])
             for connected_switch in switch['connected_switches']:
                 connected_switch_id = str(connected_switch)
-                print("Connecting switch {} to switch {}".format(switch_id, connected_switch_id))
+                print_debug("Connecting switch {} to switch {}".format(switch_id, connected_switch_id))
                 self.addLink(switch_id, connected_switch_id)
 
     # Load the JSON network topology file and validate it
@@ -78,7 +87,7 @@ class NetworkTopology(Topo):
 
         #validate json
         if 'switches' not in json_data or list(json_data.keys()) != ['switches']:
-            print("Invalid JSON file: 'switches' key not found or extra keys found")
+            print_error("Invalid JSON file: 'switches' key not found or extra keys found")
             raise Exception('Invalid JSON file')
         
         for switch in json_data['switches']:    #check if all keys are valid
@@ -91,7 +100,7 @@ class NetworkTopology(Topo):
         switch_ids = set()
         for switch in json_data['switches']:
             if switch['id'] in switch_ids:
-                print("The switch with id {} is not unique".format(switch['id']))
+                print_error("The switch with id {} is not unique".format(switch['id']))
                 raise Exception('Switch id not unique')
             switch_ids.add(switch['id'])
 
@@ -101,7 +110,7 @@ class NetworkTopology(Topo):
             for connected_switch in switch['connected_switches']:
                 link = (switch['id'], connected_switch)
                 if link in links or (link[1], link[0]) in links:
-                    print("The link between switch {} and switch {} is redundant".format(link[0], link[1]))
+                    print_error("The link between switch {} and switch {} is redundant".format(link[0], link[1]))
                     raise Exception('Redundant switch connections')
                 links.add(link)
 
