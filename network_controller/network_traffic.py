@@ -3,8 +3,8 @@ from utils import costants, print_debug, print_error
 class NetworkTraffic:
     def __init__(self, network_controller):
         self.network_controller = network_controller
-        self.max_ping = 3
-        self.ping_timeout = 0.1
+        self.max_ping = 4
+        self.ping_timeout = 1
 
 
     def ping_all(self):
