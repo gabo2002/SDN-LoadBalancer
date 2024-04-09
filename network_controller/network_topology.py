@@ -2,6 +2,7 @@ import json
 import traceback
 from mininet.topo import Topo
 from mininet.link import TCLink
+from mininet.node import Host
 import utils
 from utils import print_debug,print_error
 
@@ -46,11 +47,12 @@ class NetworkTopology(Topo):
                 #check if host already exists
                 host_id = str(host['hostid'])
                 link_bw_h = int(host['bw'])
+                host_ip = str(host['ip'])
                 if host_id in self.hosts():
                     self.addLink(host_id, self.my_switches[-1], cls=TCLink, bw=link_bw_h)
                     continue
                 
-                host = self.addHost(host_id)
+                host = self.addHost(host_id,cls=Host,ip=host_ip, defaultRoute = None)
                 self.my_hosts.append(host)
                 print_debug("Creating host {} linked to switch: {}".format(host_id,switch_id))
                 self.addLink(host, self.my_switches[-1])
