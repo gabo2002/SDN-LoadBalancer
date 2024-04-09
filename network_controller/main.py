@@ -6,6 +6,7 @@ from mininet.clean import Cleanup
 from mininet.node import RemoteController
 from mininet.util import dumpNodeConnections
 import utils
+import time
 from utils import costants
 
 def main():
@@ -43,4 +44,11 @@ if __name__ == "__main__":
     Cleanup.cleanup()
     print("\n\n{}  {}CLEANUP {} Mininet instances removed{}".format(costants['important_emote'], costants['ansi_green'],costants['ansi_white'],costants['ansi_white']))
 
+    #wait until the controller is up
+    while True:
+        if utils.port_scan(costants['controller_host'],costants['controller_port']):
+            break
+        print("{}  {}WAIT {} Waiting for the controller to start{}".format(costants['important_emote'], costants['ansi_red'],costants['ansi_white'],costants['ansi_white']))
+        time.sleep(2)
+    print("\n\n{}  {}WAIT {} Controller is up and running{}".format(costants['important_emote'], costants['ansi_green'],costants['ansi_white'],costants['ansi_white']))
     main()

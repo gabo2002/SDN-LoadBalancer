@@ -1,5 +1,6 @@
 import os
 import json 
+import socket 
 
 # Get the path of the file
 def get_file_path(file, file_name):
@@ -31,3 +32,15 @@ def print_debug(message):
 
 def print_error(message):
     print("{}  {}ERROR: {}{}".format(costants['error_emote'],costants['ansi_red'],message,costants['ansi_white']))
+
+
+def port_scan(ip,port):
+    try:
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        s.settimeout(2)
+
+        result = s.connect((ip,port))
+        s.close()
+        return True
+    except Exception as e:
+        return False
