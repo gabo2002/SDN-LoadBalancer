@@ -1,27 +1,9 @@
 import json
 import traceback
 from mininet.topo import Topo
+from mininet.link import TCLink
 import utils
 from utils import print_debug,print_error
-'''
-    Switch json configuration: 
-
-    {
-        "switches": [
-                {
-                    id: int,
-                    connectedHost: [int],
-                    connectedSwitch: [int],
-                },
-                {
-                    id: int,
-                    connectedHost: [int],
-                    connectedSwitch: [int],
-                }
-            ]
-    }
-    
-'''
 
 costants = utils.load_costants()
 
@@ -60,11 +42,13 @@ class NetworkTopology(Topo):
             self.my_switches.append(self.addSwitch(switch_id))
 
             # Create hosts
-            for host_id in switch['hosts']:
+            for host in switch['hosts']:
+                print(host)
                 #check if host already exists
-                host_id = str(host_id)
+                host_id = str(host['hostid'])
+                link_bw_h = int(host['bw'])
                 if host_id in self.hosts():
-                    self.addLink(host_id, self.my_switches[-1])
+                    self.addLink(host_id, self.my_switches[-1], cls=TCLink, bw=link_bw_h)
                     continue
                 
                 host = self.addHost(host_id)
@@ -76,9 +60,10 @@ class NetworkTopology(Topo):
         for switch in json_data['switches']:
             switch_id = str(switch['id'])
             for connected_switch in switch['connected_switches']:
-                connected_switch_id = str(connected_switch)
+                connected_switch_id = str(connected_switch['switchid'])
+                link_bw_s = int(connected_switch['bw'])
                 print_debug("Connecting switch {} to switch {}".format(switch_id, connected_switch_id))
-                self.addLink(switch_id, connected_switch_id)
+                self.addLink(switch_id, connected_switch_id, cls=TCLink, bw=link_bw_s)
 
     # Load the JSON network topology file and validate it
     def load_json(self):
@@ -107,7 +92,7 @@ class NetworkTopology(Topo):
         #redundant switch connections
         links = set()
         for switch in json_data['switches']:
-            for connected_switch in switch['connected_switches']:
+            for connected_switch in str(switch['id']):
                 link = (switch['id'], connected_switch)
                 if link in links or (link[1], link[0]) in links:
                     print_error("The link between switch {} and switch {} is redundant".format(link[0], link[1]))
