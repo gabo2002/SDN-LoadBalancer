@@ -3,8 +3,8 @@ from utils import costants, print_debug, print_error
 class NetworkTraffic:
     def __init__(self, network_controller):
         self.network_controller = network_controller
-        self.max_ping = 4
-        self.ping_timeout = 1
+        self.max_ping = 15
+        self.ping_timeout = 0.2
 
 
     def ping_all(self):
@@ -24,6 +24,7 @@ class NetworkTraffic:
             else: 
                 print("\n\n{}  {}NETWORK TRAFFIC {} All hosts reachable{}\n\n".format(costants['ping_emote'], costants['ansi_green'],costants['ansi_white'],costants['ansi_white']))
                 return
+            self.ping_timeout += 0.05
         
         print_error("Not all hosts are reachable: be sure that the controller is running and the network is correctly configured")
         print("\n\n{}  {}NETWORK TRAFFIC {} Not all the hosts are reachable{}\n\n".format(costants['ping_emote'], costants['ansi_red'],costants['ansi_white'],costants['ansi_white']))
