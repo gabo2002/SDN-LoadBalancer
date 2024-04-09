@@ -17,7 +17,7 @@ def main():
     
     #Create a Mininet object
     print("\n\n{}  {}NETWORK {}Creating Mininet network{}\n\n".format(costants['net_emote'], costants['ansi_red'],costants['ansi_white'],costants['ansi_white']))
-    network = Mininet(topology,controller=None,autoSetMacs=True,autoStaticArp=False)
+    network = Mininet(topology,controller=None,autoSetMacs=True,autoStaticArp=True)
 
     #add the controller
     network.addController("LoadBalancerController",ip=costants['controller_host'],port=costants['controller_port'],controller=RemoteController)
