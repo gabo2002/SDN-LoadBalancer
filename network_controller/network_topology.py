@@ -43,7 +43,6 @@ class NetworkTopology(Topo):
 
             # Create hosts
             for host in switch['hosts']:
-                print(host)
                 #check if host already exists
                 host_id = str(host['hostid'])
                 link_bw_h = int(host['bw'])

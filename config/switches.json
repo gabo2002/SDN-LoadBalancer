@@ -3,12 +3,24 @@
         {
             "id" : "S1",
             "hosts" : [
-                "H1",
-                "H2"
+                {
+                    "hostid" : "H1",
+                    "bw" : 1
+                },
+                {
+                    "hostid" : "H2",
+                    "bw" : 1
+                }
             ],
             "connected_switches" : [
-                "S2",
-                "S3"
+                {
+                    "switchid" : "S2",
+                    "bw" : 1
+                },
+                {
+                    "switchid" : "S3",
+                    "bw" : 1
+                }
             ]
         },
         {
@@ -16,17 +28,35 @@
             "hosts" : [
             ],
             "connected_switches" : [
-                "S3",
-                "S4",
-                "S9"
+                {
+                    "switchid" : "S3",
+                    "bw" : 1
+                },
+                {
+                    "switchid" : "S4",
+                    "bw" : 1
+                },
+                {
+                    "switchid" : "S9",
+                    "bw" : 1
+                }
             ]
         },
         {
             "id" : "S3",
             "hosts" : [
-                "H3",
-                "H4",
-                "H5"
+                {
+                    "hostid" : "H3",
+                    "bw" : 1
+                },
+                {
+                    "hostid" : "H4",
+                    "bw" : 1
+                },
+                {
+                    "hostid" : "H5",
+                    "bw" : 1
+                }
             ],
             "connected_switches" : [
             ]
@@ -34,18 +64,33 @@
         {
             "id" : "S4",
             "hosts" : [
-                "H5",
-                "H6"
+                {
+                    "hostid" : "H5",
+                    "bw" : 1
+                },
+                {
+                    "hostid" : "H6",
+                    "bw" : 1
+                }
             ],
             "connected_switches" : [
-                "S5"
+                {
+                    "switchid" : "S5",
+                    "bw" : 1
+                }
             ]
         },
         {
             "id" : "S5",
             "hosts" : [
-                "H7",
-                "H8"
+                {
+                    "hostid" : "H7",
+                    "bw" : 1
+                },
+                {
+                    "hostid" : "H8",
+                    "bw" : 1
+                }
             ],
             "connected_switches" : [
             ]
@@ -53,41 +98,83 @@
         {
             "id" : "S6",
             "hosts" : [
-                "H7",
-                "H8",
-                "H9",
-                "H10"
+                {
+                    "hostid" : "H7",
+                    "bw" : 1
+                },
+                {
+                    "hostid" : "H8",
+                    "bw" : 1
+                },
+                {
+                    "hostid" : "H9",
+                    "bw" : 1
+                },
+                {
+                    "hostid" : "H10",
+                    "bw" : 1
+                }
             ],
             "connected_switches" : [
-                "S7"
+                {
+                    "switchid" : "S7",
+                    "bw" : 1
+                }
             ]
         },
         {
             "id" : "S7",
             "hosts" : [
-                "H11"
+                {
+                    "hostid" : "H11",
+                    "bw" : 1
+                }
             ],
             "connected_switches" : [
-                "S8",
-                "S9"
+                {
+                    "switchid" : "S8",
+                    "bw" : 1
+                },
+                {
+                    "switchid" : "S9",
+                    "bw" : 1
+                }
             ]
         },
         {
             "id" : "S8",
             "hosts" : [
-                "H6",
-                "H11"
+                {
+                    "hostid" : "H6",
+                    "bw" : 1
+                },
+                {
+                    "hostid" : "H11",
+                    "bw" : 1
+                }
             ],
             "connected_switches" : [
-
+                {
+                    "switchid" : "S9",
+                    "bw" : 1
+                }
             ]
         },
         {
             "id" : "S9",
             "hosts" : [
-                "H11",
-                "H12",
-                "H13"
+                {
+                    "hostid" : "H11",
+                    "bw" : 1
+                },
+                {
+                    "hostid" : "H12",
+                    "bw" : 1
+                },
+                {
+                    "hostid" : "H13",
+                    "bw" : 1
+                }
             ],
             "connected_switches" : [
                 
