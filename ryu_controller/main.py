@@ -9,16 +9,20 @@ from utils import print_debug,print_error
 import networkx as nx
 
 
-class RuyTest(app_manager.RyuApp):
+class RyuController(app_manager.RyuApp):
     OFP_VERSIONS = [ofproto_v1_3.OFP_VERSION]
 
     def __init__(self, *args, **kwargs):
-        super(RuyTest, self).__init__(*args, **kwargs)
+        super(RyuController, self).__init__(*args, **kwargs)
 
     #Event handler executed when a switch connects to the controller
     @set_ev_cls(ofp_event.EventOFPSwitchFeatures, CONFIG_DISPATCHER)
     def switch_default_features_handler(self, ev):
         print_debug("Detected switch with datapath id: {}".format(ev.msg.datapath.id))
+
+        #send link discovery request
+        self.__request_stats(ev.msg.datapath)
+        self.stats_speed_request(ev.msg.datapath)
 
         #Getting the datapath instance from the switch
         datapath = ev.msg.datapath
@@ -39,7 +43,7 @@ class RuyTest(app_manager.RyuApp):
         inst = [parser.OFPInstructionActions(ofproto.OFPIT_APPLY_ACTIONS, actions)]
 
         #Creating the flow mod message
-        mod = parser.OFPFlowMod(datapath=datapath, priority=0, match=match, instructions=inst)
+        mod = parser.OFPFlowMod(datapath=datapath, priority=1, match=match, instructions=inst)
 
         #sending the flow mod message to the switch
         datapath.send_msg(mod)
@@ -60,7 +64,7 @@ class RuyTest(app_manager.RyuApp):
         inst = [parser.OFPInstructionActions(ofproto.OFPIT_APPLY_ACTIONS, actions)]
 
         #Creating the flow mod message
-        mod = parser.OFPFlowMod(datapath=datapath, priority=1, match=match, instructions=inst)
+        mod = parser.OFPFlowMod(datapath=datapath, priority=2, match=match, instructions=inst)
 
         #sending the flow mod message to the switch
         datapath.send_msg(mod)
@@ -68,7 +72,7 @@ class RuyTest(app_manager.RyuApp):
     #Event handler executed when a packet in message is received from a switch
     @set_ev_cls(ofp_event.EventOFPPacketIn, MAIN_DISPATCHER)
     def packet_in_handler(self, ev):
-        print_debug("Packet in event detected from switch with datapath id: {}".format(ev.msg.datapath.id))
+        #print_debug("Packet in event detected from switch with datapath id: {}".format(ev.msg.datapath.id))
         #Getting the packet in message
         msg = ev.msg
         #Getting the datapath instance from the switch
@@ -90,7 +94,7 @@ class RuyTest(app_manager.RyuApp):
         
         #check if the packet is an LLDP packet
         if eth.ethertype != ether_types.ETH_TYPE_IP:
-            print_debug("Not an IP packet, ignoring")
+            #print_debug("Not an IP packet, ignoring")
             return 
 
         dst = eth.dst
@@ -156,7 +160,53 @@ class RuyTest(app_manager.RyuApp):
         first_link = net[ path[0] ][ path[1] ]
 
         return first_link['port']
+    
+    def __request_stats(self, datapath):
+        print_debug("Requesting stats from switch with datapath id: {}".format(datapath.id))
+        ofproto = datapath.ofproto
+        parser = datapath.ofproto_parser
 
+        req = parser.OFPPortStatsRequest(datapath, 0, ofproto.OFPP_ANY)
+        datapath.send_msg(req)
+
+    @set_ev_cls(ofp_event.EventOFPPortStatsReply, MAIN_DISPATCHER)
+    def flow_stats_reply_handler(self, ev):
+
+        for stat in ev.msg.body:
+            print("Port: {}".format(stat.port_no))
+            print("Rx Packets: {}".format(stat.rx_packets))
+            print("Tx Packets: {}".format(stat.tx_packets))
+            print("Rx Bytes: {}".format(stat.rx_bytes))
+            print("Tx Bytes: {}".format(stat.tx_bytes))
+            print("Rx Errors: {}".format(stat.rx_errors))
+            print("Tx Errors: {}".format(stat.tx_errors))
+            print("Rx Dropped: {}".format(stat.rx_dropped))
+            print("Tx Dropped: {}".format(stat.tx_dropped))
+            print("Collisions: {}".format(stat.collisions))
+            print("Duration Sec: {}".format(stat.duration_sec))
+            print("Duration Nsec: {}".format(stat.duration_nsec))
+    
+    def stats_speed_request(self, datapath):
+        ofproto = datapath.ofproto
+        parser = datapath.ofproto_parser
+
+        req = parser.OFPPortDescStatsRequest(datapath, 0)
+        datapath.send_msg(req)
+
+    @set_ev_cls(ofp_event.EventOFPPortDescStatsReply, MAIN_DISPATCHER)
+    def stats_speed_reply(self,ev):
+        for p in ev.msg.body:
+            print("Port: {}".format(p.port_no))
+            print("HwAddr: {}".format(p.hw_addr))
+            print("Name: {}".format(p.name))
+            print("Config: {}".format(p.config))
+            print("State: {}".format(p.state))
+            print("Curr: {}".format(p.curr))
+            print("Advertised: {}".format(p.advertised))
+            print("Supported: {}".format(p.supported))
+            print("Peer: {}".format(p.peer))
+            print("Curr Speed: {}".format(p.curr_speed))
+            print("Max Speed: {}".format(p.max_speed))
 
 if __name__ == '__main__':
     controller = RuyTest()
