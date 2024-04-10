@@ -14,10 +14,6 @@ class RuyTest(app_manager.RyuApp):
 
     def __init__(self, *args, **kwargs):
         super(RuyTest, self).__init__(*args, **kwargs)
-        self.mac_to_port = {}
-
-        self.wsgi = kwargs.get('wsgi', None)
-        self.ws_manager = kwargs.get('ws_manager', None)
 
     #Event handler executed when a switch connects to the controller
     @set_ev_cls(ofp_event.EventOFPSwitchFeatures, CONFIG_DISPATCHER)
@@ -44,6 +40,27 @@ class RuyTest(app_manager.RyuApp):
 
         #Creating the flow mod message
         mod = parser.OFPFlowMod(datapath=datapath, priority=0, match=match, instructions=inst)
+
+        #sending the flow mod message to the switch
+        datapath.send_msg(mod)
+        #create another flow mod message to send the packets to the controller
+        
+        #match only tcp connections
+        match = parser.OFPMatch(
+            eth_type=ether_types.ETH_TYPE_IP,
+            ip_proto=6,
+        )
+
+        #actions -> Send everything to the controller if no other rule is matched
+        actions = [
+            parser.OFPActionOutput(ofproto.OFPP_CONTROLLER, ofproto.OFPCML_NO_BUFFER)   #Send to controller with no buffer
+        ]
+
+        #instructions
+        inst = [parser.OFPInstructionActions(ofproto.OFPIT_APPLY_ACTIONS, actions)]
+
+        #Creating the flow mod message
+        mod = parser.OFPFlowMod(datapath=datapath, priority=1, match=match, instructions=inst)
 
         #sending the flow mod message to the switch
         datapath.send_msg(mod)
