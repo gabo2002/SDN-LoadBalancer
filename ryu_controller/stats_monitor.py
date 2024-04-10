@@ -23,7 +23,7 @@ class ControllerStatsMonitor(app_manager.RyuApp):
         print_debug("Detected switch with datapath id: {}".format(ev.msg.datapath.id))
 
         #send link discovery request
-        self.datapaths.append(ev.msg.datapath)
+        self.datapaths.add(ev.msg.datapath)
     
     def request_stats(self, datapath):
         print_debug("Requesting stats from switch with datapath id: {}".format(datapath.id))
@@ -41,7 +41,7 @@ class ControllerStatsMonitor(app_manager.RyuApp):
         
     def _monitor(self):
         while True:
-            for dp in self.datapaths.values():
+            for dp in self.datapaths:
                 self.request_stats(dp)
                 self.request_speed_stats(dp)
             hub.sleep(self.sleep)

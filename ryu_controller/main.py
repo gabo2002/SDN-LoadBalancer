@@ -20,10 +20,6 @@ class RyuController(app_manager.RyuApp):
     def switch_default_features_handler(self, ev):
         print_debug("Detected switch with datapath id: {}".format(ev.msg.datapath.id))
 
-        #send link discovery request
-        self.__request_stats(ev.msg.datapath)
-        self.stats_speed_request(ev.msg.datapath)
-
         #Getting the datapath instance from the switch
         datapath = ev.msg.datapath
         #Getting the OpenFlow protocol instance
