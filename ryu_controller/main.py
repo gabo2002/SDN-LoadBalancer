@@ -160,14 +160,6 @@ class RyuController(app_manager.RyuApp):
         first_link = net[ path[0] ][ path[1] ]
 
         return first_link['port']
-    
-    def __request_stats(self, datapath):
-        print_debug("Requesting stats from switch with datapath id: {}".format(datapath.id))
-        ofproto = datapath.ofproto
-        parser = datapath.ofproto_parser
-
-        req = parser.OFPPortStatsRequest(datapath, 0, ofproto.OFPP_ANY)
-        datapath.send_msg(req)
 
     @set_ev_cls(ofp_event.EventOFPPortStatsReply, MAIN_DISPATCHER)
     def flow_stats_reply_handler(self, ev):
@@ -185,13 +177,6 @@ class RyuController(app_manager.RyuApp):
             print("Collisions: {}".format(stat.collisions))
             print("Duration Sec: {}".format(stat.duration_sec))
             print("Duration Nsec: {}".format(stat.duration_nsec))
-    
-    def stats_speed_request(self, datapath):
-        ofproto = datapath.ofproto
-        parser = datapath.ofproto_parser
-
-        req = parser.OFPPortDescStatsRequest(datapath, 0)
-        datapath.send_msg(req)
 
     @set_ev_cls(ofp_event.EventOFPPortDescStatsReply, MAIN_DISPATCHER)
     def stats_speed_reply(self,ev):
@@ -209,4 +194,4 @@ class RyuController(app_manager.RyuApp):
             print("Max Speed: {}".format(p.max_speed))
 
 if __name__ == '__main__':
-    controller = RuyTest()
+    controller = RyuController()
