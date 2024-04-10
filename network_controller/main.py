@@ -29,7 +29,7 @@ def main():
     print("\n\n{}  {}NETWORK {}Network started{}".format(costants['net_emote'], costants['ansi_green'],costants['ansi_white'],costants['ansi_white']))
 
     #Create a network traffic object
-    traffic_controller = NetworkTraffic(network)
+    traffic_controller = NetworkTraffic(network,topology)
 
     #Ping all the hosts to check the reachability
     traffic_controller.ping_all()
