@@ -1,0 +1,166 @@
+{
+    "traffic": [
+        {
+            "type" : "TCP",
+            "src_host":"H1",
+            "dst_host":"H13",
+            "port_src" : 8000,
+            "port_dst" : 8080,
+            "data_size": 10000
+        },
+        {
+            "type" : "TCP",
+            "src_host":"H2",
+            "dst_host":"H13",
+            "port_src" : 4000,
+            "port_dst" : 8080,
+            "data_size": 100000000
+        },
+        {
+            "type" : "TCP",
+            "src_host":"H3",
+            "dst_host":"H5",
+            "port_src" : 1234,
+            "port_dst" : 4321,
+            "data_size": 40000
+        },
+        {
+            "type" : "ARP",
+            "src_host":"H2",
+            "dst_host":"H12",
+            "data_size": 200
+        },
+        {
+            "type" : "TCP",
+            "src_host":"H7",
+            "dst_host":"H9",
+            "port_src" : 5000,
+            "port_dst" : 6000,
+            "data_size": 1000000000
+        },
+        {
+            "type" : "UDP",
+            "src_host":"H7",
+            "dst_host":"H11",
+            "port_src" : 1025,
+            "port_dst" : 1025,
+            "data_size": 69000
+        },
+        {
+            "type" : "TCP",
+            "src_host":"H4",
+            "dst_host":"H7",
+            "port_src" : 2222,
+            "port_dst" : 3333,
+            "data_size": 700000000
+        },
+        {
+            "type" : "TCP",
+            "src_host": "H4",
+            "dst_host": "H6",
+            "port_src" : 3333,
+            "port_dst" : 9000,
+            "data_size": 1234500
+        },
+        {
+            "type" : "UDP",
+            "src_host":"H5",
+            "dst_host":"H10",
+            "port_src" : 9000,
+            "port_dst" : 3306,
+            "data_size": 900000
+        },
+        {
+            "type" : "TCP",
+            "src_host": "H3",
+            "dst_host": "H1",
+            "port_src" : 3456,
+            "port_dst" : 6570,
+            "data_size": 3456000
+        },
+        {
+            "type" : "ARP",
+            "src_host": "H3",
+            "dst_host": "H8",
+            "data_size": 400000
+        },
+        {
+            "type" : "TCP",
+            "src_host": "H8",
+            "dst_host": "H9",
+            "port_src" : 4500,
+            "port_dst" : 4500,
+            "data_size": 5600000
+        },
+        {
+            "type" : "TCP",
+            "src_host": "H10",
+            "dst_host": "H11",
+            "port_src" : 6000,
+            "port_dst" : 4500,
+            "data_size": 4000000000
+        },
+        {
+            "type" : "TCP",
+            "src_host": "H12",
+            "dst_host": "H7",
+            "port_src" : 1026,
+            "port_dst" : 4000,
+            "data_size": 567000
+        },
+        {
+            "type" : "UDP",
+            "src_host": "H4",
+            "dst_host": "H5",
+            "port_src" : 2000,
+            "port_dst" : 3000,
+            "data_size": 900000000
+        },
+        {
+            "type" : "UDP",
+            "src_host": "H6",
+            "dst_host": "H10",
+            "port_src" : 4567,
+            "port_dst" : 3306,
+            "data_size": 1234567
+        },
+        {
+            "type" : "UDP",
+            "src_host":"H1",
+            "dst_host":"H5",
+            "port_src" : 6789,
+            "port_dst" : 42069,
+            "data_size": 987654
+        },
+        {
+            "type" : "TCP",
+            "src_host": "H2",
+            "dst_host": "H8",
+            "port_src" : 1081,
+            "port_dst" : 6829,
+            "data_size": 9840000
+        },
+        {
+            "type" : "ARP",
+            "src_host": "H3",
+            "dst_host": "H10",
+            "data_size": 1000
+        },
+        {
+            "type" : "TCP",
+            "src_host": "H6",
+            "dst_host": "H9",
+            "port_src" : 6969,
+            "port_dst" : 6969,
+            "data_size": 4200000000
+        },
+        {
+            "type" : "TCP",
+            "src_host": "H6",
+            "dst_host": "H10",
+            "port_src" : 4200,
+            "port_dst" : 4200,
+            "data_size": 88000000000
+        }
+    ]
+}
