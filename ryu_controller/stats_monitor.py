@@ -5,6 +5,7 @@ from ryu.controller.handler import set_ev_cls
 from ryu.ofproto import ofproto_v1_3
 from ryu.topology.api import get_switch, get_link, get_all_host, get_all_switch, get_all_link
 from ryu.lib.packet import packet, ethernet, ether_types
+from ryu.lib import hub
 from utils import print_debug,print_error
 import networkx as nx
 
@@ -14,6 +15,8 @@ class ControllerStatsMonitor(app_manager.RyuApp):
     def __init__(self, *args, **kwargs):
         super(ControllerStatsMonitor, self).__init__(*args, **kwargs)
         self.datapaths = set()
+        self.monitor_thread = hub.spawn(self._monitor)
+        self.sleep = 5
 
     @set_ev_cls(ofp_event.EventOFPSwitchFeatures, CONFIG_DISPATCHER)
     def switch_default_features_handler(self, ev):
@@ -35,6 +38,11 @@ class ControllerStatsMonitor(app_manager.RyuApp):
 
         req = parser.OFPPortDescStatsRequest(datapath, 0)
         datapath.send_msg(req)
-
-
+        
+    def _monitor(self):
+        while True:
+            for dp in self.datapaths.values():
+                self.request_stats(dp)
+                self.request_speed_stats(dp)
+            hub.sleep(self.sleep)
 
