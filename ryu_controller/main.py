@@ -9,6 +9,39 @@ from utils import print_debug,print_error
 import networkx as nx
 
 
+'''
+    Standard flow entry table for the switches:
+
+    Match: All packets -> priority 1 (only if no other rule is matched)
+    Actions: Send to controller
+    -> This is the default rule for all the switches, traffic that is not UDP/TCP will be routed as normal traffic
+
+    Match dst MAC -> priority 5
+    Actions: Forward to port
+    -> This is the rule for the next packets of a connection, the controller will push a new rule to the switch to route the packets using
+       standard switching 
+    IMPORTANT: Only non TCP/UDP packets must be forwarded using this rule
+
+    Match: TCP packets -> priority 100
+    Actions: Send to controller
+    -> This is the rule for New TCP connections, the controller will push a new rule to the switch to route the packets using
+       the shortest path according to the cost function
+    
+    Match: UDP packets -> priority 100
+    Actions: Send to controller
+    -> This is the rule for New UDP connections, the controller will push a new rule to the switch to route the packets using
+       the shortest path according to the cost function
+
+    Match: TCP/UDP Connection -> prority 1000
+    Actions: Forward to port using the shortest path
+    -> This is the rule for the next packets of a connection, the controller had push a new rule to the switch to route the packets using
+       the shortest path according to the cost function
+    IMPORTANT: Only TCP/UDP packets must be forwarded using this rule
+
+    This is the basic flow entry table for the switches, the controller will push new rules to the switches to route the packets
+'''
+
+
 class RyuController(app_manager.RyuApp):
     OFP_VERSIONS = [ofproto_v1_3.OFP_VERSION]
 
@@ -27,6 +60,7 @@ class RyuController(app_manager.RyuApp):
         #Getting the OpenFlow protocol parser instance -> packet construction
         parser = datapath.ofproto_parser
 
+        #ADDING DEFAULT FLOW ENTRIES -> EVERYTHING TO CONTROLLER
         #match all packets
         match = parser.OFPMatch()
 
@@ -43,8 +77,9 @@ class RyuController(app_manager.RyuApp):
 
         #sending the flow mod message to the switch
         datapath.send_msg(mod)
+
+        #ADDING FLOW ENTRIES FOR TCP PACKETS
         #create another flow mod message to send the packets to the controller
-        
         #match only tcp connections
         match = parser.OFPMatch(
             eth_type=ether_types.ETH_TYPE_IP,
@@ -60,7 +95,29 @@ class RyuController(app_manager.RyuApp):
         inst = [parser.OFPInstructionActions(ofproto.OFPIT_APPLY_ACTIONS, actions)]
 
         #Creating the flow mod message
-        mod = parser.OFPFlowMod(datapath=datapath, priority=2, match=match, instructions=inst)
+        mod = parser.OFPFlowMod(datapath=datapath, priority=100, match=match, instructions=inst)
+
+        #sending the flow mod message to the switch
+        datapath.send_msg(mod)
+
+        #ADDING FLOW ENTRIES FOR UDP PACKETS
+        #create another flow mod message to send the packets to the controller
+        #match only udp connections
+        match = parser.OFPMatch(
+            eth_type=ether_types.ETH_TYPE_IP,
+            ip_proto=17,
+        )
+
+        #actions -> Send everything to the controller if no other rule is matched
+        actions = [
+            parser.OFPActionOutput(ofproto.OFPP_CONTROLLER, ofproto.OFPCML_NO_BUFFER)   #Send to controller with no buffer
+        ]
+
+        #instructions
+        inst = [parser.OFPInstructionActions(ofproto.OFPIT_APPLY_ACTIONS, actions)]
+
+        #Creating the flow mod message
+        mod = parser.OFPFlowMod(datapath=datapath, priority=100, match=match, instructions=inst)
 
         #sending the flow mod message to the switch
         datapath.send_msg(mod)
