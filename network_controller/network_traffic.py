@@ -91,7 +91,8 @@ class NetworkTraffic:
             host_dst.cmd("iperf3 -s -p {} &".format(dst_port))
             #h1 should send data to h2 sending data_size bytes
             data = bytes_to_kilobytes(int(data_size))
-            host_src.cmd("iperf3 -c {} -p {} -n {} -B {} --cport {} &".format(host_dst.IP(),dst_port,data,host_src.IP(),src_port))
+            output = host_src.cmd("iperf3 -c {} -p {} -n {} -B {} --cport {} &".format(host_dst.IP(),dst_port,data,host_src.IP(),src_port))
+            print(output)
         elif traffic_type == 'UDP':
             #h2 should be listen on port dst_port
             host_dst.cmd("iperf3 -s -p {} -u &".format(dst_port))

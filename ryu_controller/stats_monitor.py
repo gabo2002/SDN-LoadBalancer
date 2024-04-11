@@ -42,7 +42,8 @@ class ControllerStatsMonitor(app_manager.RyuApp):
     def _monitor(self):
         while True:
             for dp in self.datapaths:
-                self.request_stats(dp)
-                self.request_speed_stats(dp)
+                pass
+                #self.request_stats(dp)
+                #self.request_speed_stats(dp)
             hub.sleep(self.sleep)
 

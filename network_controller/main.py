@@ -1,6 +1,7 @@
 from network_topology import NetworkTopology
 from network_traffic import NetworkTraffic
 from mininet.net import Mininet
+from mininet.cli import CLI
 from mininet.log import setLogLevel
 from mininet.clean import Cleanup
 from mininet.node import RemoteController
@@ -37,6 +38,8 @@ def main():
     #Generate traffic between all the hosts
     traffic_controller.generate_all_traffic()
 
+    #Open the Mininet CLI
+    CLI(network)
 
 if __name__ == "__main__":
     setLogLevel('info')

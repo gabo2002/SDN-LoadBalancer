@@ -31,3 +31,12 @@ def print_debug(message):
 
 def print_error(message):
     print("{}  {}ERROR: {}{}".format(costants['error_emote'],costants['ansi_red'],message,costants['ansi_white']))
+
+
+def print_path(path,src,dst):
+    #nx.shortest_path(self.graph, source=src, target=dst, weight='weight')
+    print("Path from {} to {}:".format(src,dst))
+    for i in range(len(path)-1):
+        print("{} -> ".format(path[i]),end='')
+
+    print(path[-1])
