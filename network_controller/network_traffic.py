@@ -88,12 +88,19 @@ class NetworkTraffic:
 
         if traffic_type == 'TCP':
             #h2 should be listen on port dst_port
-            host_dst.cmd("iperf -s -p {} &".format(dst_port))
+            host_dst.cmd("iperf3 -s -p {} &".format(dst_port))
             #h1 should send data to h2 sending data_size bytes
             data = bytes_to_kilobytes(int(data_size))
-            host_src.cmd("iperf -c {} -p {} -n {} --cport {} &".format(host_dst.IP(),dst_port,data,src_port))
+            host_src.cmd("iperf3 -c {} -p {} -n {} -B {} --cport {} &".format(host_dst.IP(),dst_port,data,host_src.IP(),src_port))
+        elif traffic_type == 'UDP':
+            #h2 should be listen on port dst_port
+            host_dst.cmd("iperf3 -s -p {} -u &".format(dst_port))
+            #h1 should send data to h2 sending data_size bytes
+            data = bytes_to_kilobytes(int(data_size))
+            host_src.cmd("iperf3 -c {} -p {} -n {} -u -B {} --cport {} &".format(host_dst.IP(),dst_port,data,host_src.IP(),src_port))
         else:
-            print("Traffic type not supported yet: {}".format(traffic_type))
+            #TODO dealing with data_size
+            host_src.cmd("arping -c 1 {}".format(host_dst.IP()))
 
         print("{}  {}Traffic {} Traffic generated from {} to {}{}".format(costants['ping_emote'], costants['ansi_green'],costants['ansi_white'],host_src,host_dst,costants['ansi_white']))
     
