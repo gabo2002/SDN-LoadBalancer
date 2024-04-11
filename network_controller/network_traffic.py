@@ -1,4 +1,4 @@
-from utils import costants, print_debug, print_error,get_file_path
+from utils import costants, print_debug, print_error,get_file_path,bytes_to_kilobytes
 import json
 import traceback
 
@@ -62,12 +62,15 @@ class NetworkTraffic:
         print("\n\n{}  {}NETWORK TRAFFIC {} Starting Network Traffic between all hosts{}\n\n".format(costants['ping_emote'], costants['ansi_red'],costants['ansi_white'],costants['ansi_white']))
 
         for traffic in self.traffic:
-            self._generate_traffic(traffic['src_host'],traffic['dst_host'],traffic['type'],traffic['data_size'],traffic['src_port'],traffic['dst_port'])
+            if traffic['type'] == 'ARP':
+                self._generate_traffic(traffic['src_host'],traffic['dst_host'],traffic['type'],0,0,0)
+            else:
+                self._generate_traffic(traffic['src_host'],traffic['dst_host'],traffic['type'],traffic['data_size'],traffic['src_port'],traffic['dst_port'])
 
         print("\n\n{}  {}NETWORK TRAFFIC {} Network Traffic between all hosts completed{}\n\n".format(costants['ping_emote'], costants['ansi_green'],costants['ansi_white'],costants['ansi_white']))
 
     def _generate_traffic(self,host_src,host_dst,traffic_type,data_size,src_port,dst_port):
-        print("\n\n{}  {}NETWORK TRAFFIC {} Generating Traffic from {} to {}{}\n\n".format(costants['ping_emote'], costants['ansi_red'],costants['ansi_white'],host_src,host_dst,costants['ansi_white']))
+        print("{}  {}Traffic {} Generating Traffic from {} to {}{}".format(costants['ping_emote'], costants['ansi_red'],costants['ansi_white'],host_src,host_dst,costants['ansi_white']))
 
         try:
             host_src = self.network_controller.get(host_src)
@@ -85,13 +88,14 @@ class NetworkTraffic:
 
         if traffic_type == 'TCP':
             #h2 should be listen on port dst_port
-            host_dst.cmd("nc -l {} > /dev/null &".format(dst_port))
+            host_dst.cmd("iperf -s -p {} &".format(dst_port))
+            #h1 should send data to h2 sending data_size bytes
+            data = bytes_to_kilobytes(int(data_size))
+            host_src.cmd("iperf -c {} -p {} -n {} --cport {} &".format(host_dst.IP(),dst_port,data,src_port))
+        else:
+            print("Traffic type not supported yet: {}".format(traffic_type))
 
-            #h1 should send data to h2
-            #TODO        
-
-        print("\n\n{}  {}NETWORK TRAFFIC {} Traffic generated from {} to {}{}\n\n".format(costants['ping_emote'], costants['ansi_green'],costants['ansi_white'],host_src,host_dst,costants['ansi_white']))
-        return
+        print("{}  {}Traffic {} Traffic generated from {} to {}{}".format(costants['ping_emote'], costants['ansi_green'],costants['ansi_white'],host_src,host_dst,costants['ansi_white']))
     
     def load_json(self, path):
         json_file = open(path,'r')

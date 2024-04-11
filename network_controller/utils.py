@@ -44,3 +44,6 @@ def port_scan(ip,port):
         return True
     except Exception as e:
         return False
+
+def bytes_to_kilobytes(bytes):
+    return bytes / 2**10

@@ -34,7 +34,8 @@ def main():
     #Ping all the hosts to check the reachability
     traffic_controller.ping_all()
 
-    #TODO: Generate traffic between hosts, maybe using a JSON file to specify the hosts
+    #Generate traffic between all the hosts
+    traffic_controller.generate_all_traffic()
 
 
 if __name__ == "__main__":
