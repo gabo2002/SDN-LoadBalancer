@@ -34,9 +34,24 @@ def print_error(message):
 
 
 def print_path(path,src,dst):
-    #nx.shortest_path(self.graph, source=src, target=dst, weight='weight')
     print("Path from {} to {}:".format(src,dst))
+    reverse = True
+    #check if path is in reverse order
     for i in range(len(path)-1):
-        print("{} -> ".format(path[i]),end='')
+        if path[i] == src and path[i+1] == dst:
+            reverse = False
 
-    print(path[-1])
+    copy = path.copy()
+    if reverse:
+        copy = copy[::-1]
+    
+    color = costants['ansi_yellow']
+
+    for i in range(len(copy)-1):
+        
+        if path[i] == src: 
+            color = costants['ansi_green']
+        
+        print("{} {} {}-> ".format(color, path[i], costants['ansi_white']),end='')
+
+    print("{} {} {}".format(color,path[-1],costants['ansi_white']))

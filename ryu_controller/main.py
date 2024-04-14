@@ -127,7 +127,6 @@ class RyuController(app_manager.RyuApp):
     #Event handler executed when a packet in message is received from a switch
     @set_ev_cls(ofp_event.EventOFPPacketIn, MAIN_DISPATCHER)
     def packet_in_handler(self, ev):
-        #print_debug("Packet in event detected from switch with datapath id: {}".format(ev.msg.datapath.id))
         #Getting the packet in message
         msg = ev.msg
         #Getting the datapath instance from the switch
@@ -161,10 +160,12 @@ class RyuController(app_manager.RyuApp):
 
     #Event handler executed when a packet in message is received from a switch and the packet is a TCP or UDP packet
     def _packet_in_TCP_or_UDP_handler(self,msg,datapath,parser,ofproto,in_port,eth,ip):
-        print("TCP/UDP packet received from switch with datapath id: {}".format(datapath.id))
+        print("{} packet received from switch with datapath id: {}".format("TCP" if ip.proto == 6 else "UDP",datapath.id))
 
         if self.net is None:
+            print_debug("Creating network graph...")
             self.net = self.create_net_graph()
+            print_debug("Network graph created")
 
         #Getting the destination MAC address
         dst = eth.dst
@@ -194,49 +195,34 @@ class RyuController(app_manager.RyuApp):
         #I have to calculate the output port
         if datapath.id == dst_switch:   #if the destination is connected to the switch
             output_port = out_port  #I just need to send the packet to the host
-
-            match = parser.OFPMatch(
-                eth_type = ether_types.ETH_TYPE_IP,
-                ip_proto = ip.proto,
-                ipv4_src = ip.src,
-                ipv4_dst = ip.dst,
-                tcp_src = src_port,
-                tcp_dst = dst_port
-            )
-
+            #Creating the packet out message
+            if connection_type == 'TCP':
+                match = parser.OFPMatch(
+                    eth_type = ether_types.ETH_TYPE_IP,
+                    ip_proto = ip.proto,
+                    ipv4_src = ip.src,
+                    ipv4_dst = ip.dst,
+                    tcp_src = src_port,
+                    tcp_dst = dst_port
+                )
+            else:
+                match = parser.OFPMatch(
+                    eth_type = ether_types.ETH_TYPE_IP,
+                    ip_proto = ip.proto,
+                    ipv4_src = ip.src,
+                    ipv4_dst = ip.dst,
+                    udp_src = src_port,
+                    udp_dst = dst_port
+                )
             actions = [parser.OFPActionOutput(output_port)] #output port
 
-            inst = [
-                parser.OFPInstructionActions(ofproto.OFPIT_APPLY_ACTIONS, actions)
-            ]
-
-            mod = parser.OFPFlowMod(
-                datapath=datapath,
-                priority=1000,
-                match=match,
-                instructions=inst
-            )
-            datapath.send_msg(mod)
+            self.send_odf_flow_mod(datapath,parser,match,actions,1000)
             print("Pushing new rule to switch with datapath id: {} ".format(datapath.id))
+            print("Link from {} to {} port: {}".format(datapath.id,dst_switch,output_port))
         elif self._path_already_exists(src_port,dst_port,ip.src,ip.dst):
-            print("Path already exists")
+            print("Path already exists while handling packet from switch with datapath id: {}".format(datapath.id))
             #I have to find the path and forward the packet
-            connection = None
-            found = False
-            reverse = False
-            for i in range(len(self.connections)):
-                connection = self.connections[i]
-                if connection['src_port'] == src_port and connection['dst_port'] == dst_port and connection['src_ip'] == ip.src and connection['dst_ip'] == ip.dst:
-                    print_path(connection['path'],datapath.id,dst_switch)
-                    found = True
-                    break
-
-                #reverse path
-                if connection['src_port'] == dst_port and connection['dst_port'] == src_port and connection['src_ip'] == ip.dst and connection['dst_ip'] == ip.src:
-                    print_path(connection['path'],datapath.id,dst_switch)
-                    found = True
-                    reverse = True
-                    break
+            found,reverse,connection = self._find_connection(src_port,dst_port,ip.src,ip.dst,datapath.id,dst_switch)
                 
             if not found:
                 print_error("Connection not found")
@@ -245,16 +231,43 @@ class RyuController(app_manager.RyuApp):
             path = connection['path']
             
             if reverse:
+                print("Reverse path")
                 src_port = connection['dst_port']
                 dst_port = connection['src_port']
                 ip.src = connection['dst_ip']
                 ip.dst = connection['src_ip']
-                port = self.net[ path[connection['current_pos']] ][ path[connection['current_pos']-1] ]['port']
-                print("Link from {} to {} port: {}".format(path[connection['current_pos']],path[connection['current_pos']-1],port))
-                connection['current_pos'] -= 1
+
+                #iterate the path in reverse until I find the switch where the packet has to be forwarded
+                i = len(path)-1
+                found = False
+                while i >= 0:
+                    if path[i] == datapath.id:
+                        found = True
+                        break
+                    i -= 1
+
+                if not found:
+                    print_error("Switch not found in the path")
+                    return
+                
+                port = self.net[ path[i] ][ path[i-1] ]['port']
+                print("Link from {} to {} port: {}".format(path[i],path[i-1],port))
             else:
-                port = self.net[ path[connection['current_pos']] ][ path[connection['current_pos']+1] ]['port']
-                connection['current_pos'] += 1
+                #iterate the path until I find the switch where the packet has to be forwarded
+                i = 0
+                found = False
+                while i < len(path):
+                    if path[i] == datapath.id:
+                        found = True
+                        break
+                    i += 1
+
+                if not found:
+                    print_error("Switch not found in the path")
+                    return
+
+                port = self.net[ path[i] ][ path[i+1] ]['port']
+                print("Link from {} to {} port: {}".format(path[i],path[i+1],port))
 
             actions = [parser.OFPActionOutput(port)] #output port
 
@@ -277,26 +290,16 @@ class RyuController(app_manager.RyuApp):
                     ipv4_src=ip.src,
                     ipv4_dst=ip.dst
                 )
-            
-            inst = [
-                parser.OFPInstructionActions(ofproto.OFPIT_APPLY_ACTIONS, actions)
-            ]
-
-            mod = parser.OFPFlowMod(
-                datapath=datapath,
-                priority=1000,
-                match=match,
-                instructions=inst
-            )
-
-            datapath.send_msg(mod)
+            #send the packet to the next switch
+            self.send_odf_flow_mod(datapath,parser,match,actions,1000)
         else:
             pathsList = nx.all_shortest_paths(self.net, source=datapath.id, target=dst_switch, weight='weight', method='dijkstra')
             #iterable to list 
             paths = list(pathsList)
-
+            print("I have found {} possible paths from {} to {}".format(len(paths),datapath.id,dst_switch))
             # get a random path
             path = random.choice(paths)
+            print("I have chosen the path: ",end="")
             print_path(path,datapath.id,dst_switch)
 
             #create a new connection
@@ -306,7 +309,6 @@ class RyuController(app_manager.RyuApp):
             conn['src_ip'] = ip.src
             conn['dst_ip'] = ip.dst
             conn['path'] = path
-            conn['current_pos'] = 1
 
             #add the new connection to the list
             self.connections.append(conn)
@@ -334,76 +336,23 @@ class RyuController(app_manager.RyuApp):
                     ipv4_src=ip.src,
                     ipv4_dst=ip.dst
                 )
-
-            inst = [
-                parser.OFPInstructionActions(ofproto.OFPIT_APPLY_ACTIONS, actions)
-            ]
-
-            mod = parser.OFPFlowMod(
-                datapath=datapath,
-                priority=1000,
-                match=match,
-                instructions=inst
-            )
-
-            datapath.send_msg(mod)
-
-            '''
-            for i in range(len(path)-1):
-                print("Pushing new rule to switch from {} to {}".format(path[i],path[i+1]))
-                first_link = net[ path[i] ][ path[i+1] ]
-                print(first_link)
-                actions = [parser.OFPActionOutput(first_link['port'])] #output port
-
-                #match this specific tcp/udp connection
-                if ip.proto == 6:
-                    match = parser.OFPMatch(
-                        eth_type=ether_types.ETH_TYPE_IP,
-                        ip_proto=6,
-                        tcp_src=src_port,
-                        tcp_dst=dst_port,
-                        ipv4_src=ip.src,
-                        ipv4_dst=ip.dst
-                    )
-                elif ip.proto == 17:
-                    match = parser.OFPMatch(
-                        eth_type=ether_types.ETH_TYPE_IP,
-                        ip_proto=17,
-                        udp_src=src_port,
-                        udp_dst=dst_port,
-                        ipv4_src=ip.src,
-                        ipv4_dst=ip.dst
-                    )
-
-                inst = [
-                    parser.OFPInstructionActions(ofproto.OFPIT_APPLY_ACTIONS, actions)
-                ]
-
-                mod = parser.OFPFlowMod(
-                    datapath=datapath,
-                    priority=1000,
-                    match=match,
-                    instructions=inst
-                )
-
-                datapath.send_msg(mod)
-            '''
+            #send the packet to the next switch
+            self.send_odf_flow_mod(datapath,parser,match,actions,1000)
         
     #Event handler executed when a packet in message is received from a switch and the packet is a TCP or UDP packet
     def _packet_in_not_TCP_or_UDP_handler(self,msg,datapath,parser,ofproto,in_port,eth):
         dst = eth.dst
-        src = eth.src
-
         dst_switch, out_port = self._find_destination_switch(dst)
 
         if dst_switch is None or out_port is None:
-            #print_error("Destination switch not found, ignoring packet")
             return
         
         if datapath.id == dst_switch:   #if the destination is connected to the switch
             output_port = out_port  #I just need to send the packet to the host
         else:   
             output_port = self._find_next_hop_to_destination(datapath.id,dst_switch) #I need to send the packet to another switch
+            if output_port is None:
+                return
 
         actions = [parser.OFPActionOutput(output_port)] #output port
 
@@ -448,16 +397,17 @@ class RyuController(app_manager.RyuApp):
         net = nx.DiGraph()
         for link in get_all_link(self):
             net.add_edge(link.src.dpid, link.dst.dpid, port=link.src.port_no)
-
-        path = nx.shortest_path(
-            net,
-            source_id,
-            destination_id
-        )
-
-        first_link = net[ path[0] ][ path[1] ]
-
-        return first_link['port']
+        try:
+            path = nx.shortest_path(
+                net,
+                source_id,
+                destination_id
+            )
+            first_link = net[ path[0] ][ path[1] ]
+            return first_link['port']
+        except nx.NetworkXNoPath:
+            print_error("No path found from {} to {}".format(source_id,destination_id))
+            return None
 
     @set_ev_cls(ofp_event.EventOFPPortStatsReply, MAIN_DISPATCHER)
     def flow_stats_reply_handler(self, ev):
@@ -507,6 +457,25 @@ class RyuController(app_manager.RyuApp):
 
         return False
 
+    def _find_connection(self,src_port,dst_port,src_ip,dst_ip,start_switch,dest_switch):
+        found = False
+        reverse = False
+        connection = None
+
+        for i in range(len(self.connections)):
+            connection = self.connections[i]
+            if connection['src_port'] == src_port and connection['dst_port'] == dst_port and connection['src_ip'] == src_ip and connection['dst_ip'] == dst_ip:
+                print_path(connection['path'],start_switch,dest_switch)
+                found = True
+                break
+            #reverse path
+            if connection['src_port'] == dst_port and connection['dst_port'] == src_port and connection['src_ip'] == dst_ip and connection['dst_ip'] == src_ip:
+                print_path(connection['path'],start_switch,dest_switch)
+                found = True
+                reverse = True
+                break
+        return (found,reverse,connection)
+
     #Create the network graph using the network topology
     def create_net_graph(self):
         net = nx.DiGraph()
@@ -514,6 +483,13 @@ class RyuController(app_manager.RyuApp):
             weight = self.cost_function_using_hop_count(net,link.src.dpid,link.dst.dpid)
             net.add_edge(link.src.dpid, link.dst.dpid, port=link.src.port_no, weight=weight)
         return net
+    
+    def send_odf_flow_mod(self,datapath,parser,match,actions,priority):
+        print_debug("Sending flow mod to switch with datapath id: {}".format(datapath.id))
+        ofproto = datapath.ofproto
+        inst = [parser.OFPInstructionActions(ofproto.OFPIT_APPLY_ACTIONS, actions)]
+        mod = parser.OFPFlowMod(datapath=datapath, priority=priority, match=match, instructions=inst)
+        datapath.send_msg(mod)
 
 if __name__ == '__main__':
     controller = RyuController()
