@@ -34,24 +34,24 @@ def print_error(message):
 
 
 def print_path(path,src,dst):
-    print("Path from {} to {}:".format(src,dst))
-    reverse = True
+    reverse = False
     #check if path is in reverse order
     for i in range(len(path)-1):
-        if path[i] == src and path[i+1] == dst:
-            reverse = False
+        if path[i] == src:
+            break
+        if path[i] == dst:
+            reverse = True
+            break
 
     copy = path.copy()
     if reverse:
-        copy = copy[::-1]
+        copy.reverse()
     
-    color = costants['ansi_yellow']
+    color = costants['ansi_green']
 
     for i in range(len(copy)-1):
-        
-        if path[i] == src: 
-            color = costants['ansi_green']
-        
-        print("{} {} {}-> ".format(color, path[i], costants['ansi_white']),end='')
+        print("{} {} {}-> ".format(color, copy[i], costants['ansi_white']),end='')
+        if copy[i] == src: 
+            color = costants['ansi_yellow']
 
-    print("{} {} {}".format(color,path[-1],costants['ansi_white']))
+    print("{} {} {}".format(color,copy[-1],costants['ansi_white']))

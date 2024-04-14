@@ -15,5 +15,6 @@
     "error_emote": "❌",
     "debug_emote": "🛠️",
     "important_emote": "🔥",
-    "ping_emote": "🏓"
+    "ping_emote": "🏓",
+    "path_emote": "🛤️"
 }

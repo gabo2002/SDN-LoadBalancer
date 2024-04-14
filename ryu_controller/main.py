@@ -5,7 +5,7 @@ from ryu.controller.handler import set_ev_cls
 from ryu.ofproto import ofproto_v1_3
 from ryu.topology.api import get_switch, get_link, get_all_host, get_all_switch, get_all_link
 from ryu.lib.packet import packet, ethernet, ether_types, ipv4, tcp, udp
-from utils import print_debug,print_error,print_path
+from utils import print_debug,print_error,print_path,costants
 import networkx as nx
 import random
 
@@ -160,7 +160,7 @@ class RyuController(app_manager.RyuApp):
 
     #Event handler executed when a packet in message is received from a switch and the packet is a TCP or UDP packet
     def _packet_in_TCP_or_UDP_handler(self,msg,datapath,parser,ofproto,in_port,eth,ip):
-        print("{} packet received from switch with datapath id: {}".format("TCP" if ip.proto == 6 else "UDP",datapath.id))
+        print("\n{} packet received from switch with datapath id: {}".format("TCP" if ip.proto == 6 else "UDP",datapath.id))
 
         if self.net is None:
             print_debug("Creating network graph...")
@@ -215,12 +215,11 @@ class RyuController(app_manager.RyuApp):
                     udp_dst = dst_port
                 )
             actions = [parser.OFPActionOutput(output_port)] #output port
-
+            print("Link from switch {} to final host using port: {}".format(datapath.id,output_port))
+            #send the packet to the host
             self.send_odf_flow_mod(datapath,parser,match,actions,1000)
-            print("Pushing new rule to switch with datapath id: {} ".format(datapath.id))
-            print("Link from {} to {} port: {}".format(datapath.id,dst_switch,output_port))
         elif self._path_already_exists(src_port,dst_port,ip.src,ip.dst):
-            print("Path already exists while handling packet from switch with datapath id: {}".format(datapath.id))
+            print("This path has been already calculated! Fetching the path from internal memory...")
             #I have to find the path and forward the packet
             found,reverse,connection = self._find_connection(src_port,dst_port,ip.src,ip.dst,datapath.id,dst_switch)
                 
@@ -251,7 +250,7 @@ class RyuController(app_manager.RyuApp):
                     return
                 
                 port = self.net[ path[i] ][ path[i-1] ]['port']
-                print("Link from {} to {} port: {}".format(path[i],path[i-1],port))
+                print("Link from switch {} to switch {} using port: {}".format(path[i],path[i-1],port))
             else:
                 #iterate the path until I find the switch where the packet has to be forwarded
                 i = 0
@@ -267,7 +266,7 @@ class RyuController(app_manager.RyuApp):
                     return
 
                 port = self.net[ path[i] ][ path[i+1] ]['port']
-                print("Link from {} to {} port: {}".format(path[i],path[i+1],port))
+                print("Link from switch {} to switch {} using port: {}".format(path[i],path[i+1],port))
 
             actions = [parser.OFPActionOutput(port)] #output port
 
@@ -296,12 +295,11 @@ class RyuController(app_manager.RyuApp):
             pathsList = nx.all_shortest_paths(self.net, source=datapath.id, target=dst_switch, weight='weight', method='dijkstra')
             #iterable to list 
             paths = list(pathsList)
-            print("I have found {} possible paths from {} to {}".format(len(paths),datapath.id,dst_switch))
-            # get a random path
+            print("{}  {}PATH FINDING {}I have found {} possible paths from {} to {}".format(costants['path_emote'],costants['ansi_green'],costants['ansi_white'],len(paths),datapath.id,dst_switch))
+            # get a random pathå
             path = random.choice(paths)
-            print("I have chosen the path: ",end="")
+            print("{}  {}PATH FINDING {} I have chosen the path: ".format(costants['path_emote'],costants['ansi_green'],costants['ansi_white']),end='')
             print_path(path,datapath.id,dst_switch)
-
             #create a new connection
             conn = dict()
             conn['src_port'] = src_port
@@ -336,6 +334,7 @@ class RyuController(app_manager.RyuApp):
                     ipv4_src=ip.src,
                     ipv4_dst=ip.dst
                 )
+            print("Link from switch {} to host using port: {}".format(path[0],first_link['port']))
             #send the packet to the next switch
             self.send_odf_flow_mod(datapath,parser,match,actions,1000)
         
@@ -465,11 +464,13 @@ class RyuController(app_manager.RyuApp):
         for i in range(len(self.connections)):
             connection = self.connections[i]
             if connection['src_port'] == src_port and connection['dst_port'] == dst_port and connection['src_ip'] == src_ip and connection['dst_ip'] == dst_ip:
+                print("{}  Path: ".format(costants['path_emote']),end='')
                 print_path(connection['path'],start_switch,dest_switch)
                 found = True
                 break
             #reverse path
             if connection['src_port'] == dst_port and connection['dst_port'] == src_port and connection['src_ip'] == dst_ip and connection['dst_ip'] == src_ip:
+                print("{}  Path: ".format(costants['path_emote']),end='')
                 print_path(connection['path'],start_switch,dest_switch)
                 found = True
                 reverse = True
