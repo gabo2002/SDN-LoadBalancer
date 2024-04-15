@@ -12,13 +12,13 @@ def get_file_path(file, file_name):
 def load_costants():
     try:
         filePath = os.path.dirname(os.path.realpath(__file__))
-        path = os.path.join(filePath, '../config/costants.json')
+        path = os.path.join(filePath, '../config/constants.json')
         file = open(path,'r')
         data = json.load(file)
         file.close()
         return data
     except Exception as e:
-        print("Impossible to load the costants.json file")
+        print("Impossible to load the constants.json file")
         print("Error: {}".format(e))
         print("Exiting...")
         exit(1)
