@@ -444,6 +444,16 @@ class RyuController(app_manager.RyuApp):
     #Cost function using hop count
     def cost_function_using_hop_count(self,net,src,dst):
         return 1
+
+    #Cost function using OSPF
+    def cost_function_using_OSPF(self,net,src,dst):
+        #TODO: implement OSPF cost function
+        return 1
+
+    #Cost function using dynamic bandwidth
+    def cost_function_using_dynamic_bandwidth(self,src,dst):
+        #TODO: implement dynamic bandwidth cost function
+        return 1
     
     #Check if the path has been already calculated
     def _path_already_exists(self,src_port,dst_port,src_ip,dst_ip):
@@ -481,7 +491,15 @@ class RyuController(app_manager.RyuApp):
     def create_net_graph(self):
         net = nx.DiGraph()
         for link in get_all_link(self):
-            weight = self.cost_function_using_hop_count(net,link.src.dpid,link.dst.dpid)
+            if costants['cost_protocol'] == 'HOP':
+                weight = self.cost_function_using_hop_count(net,link.src.dpid,link.dst.dpid)
+            elif costants['cost_protocol'] == 'OSPF':
+                weight = self.cost_function_using_OSPF(link.src.dpid,link.dst.dpid)
+            elif costants['cost_protocol'] == 'DYNAMIC_BANDWIDTH':
+                weight = self.cost_function_using_dynamic_bandwidth(link.src.dpid,link.dst.dpid)
+            else:
+                weight = 1
+                print_debug("Cost function not found, using default cost function (hop count)...")
             net.add_edge(link.src.dpid, link.dst.dpid, port=link.src.port_no, weight=weight)
         return net
     
