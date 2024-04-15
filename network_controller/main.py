@@ -36,7 +36,7 @@ def main():
     traffic_controller.ping_all()
 
     #Generate traffic between all the hosts
-    #traffic_controller.generate_all_traffic()
+    traffic_controller.generate_all_traffic()
 
     #Open the Mininet CLI
     CLI(network)

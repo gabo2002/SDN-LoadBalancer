@@ -1,6 +1,7 @@
 from utils import costants, print_debug, print_error,get_file_path,bytes_to_kilobytes
 import json
 import traceback
+from mininet.util import pmonitor
 
 '''
 {
@@ -24,6 +25,7 @@ class NetworkTraffic:
         self.topology = topology
         self.max_ping = 15
         self.ping_timeout = 0.2
+        self.popens = dict()
 
         #load traffic from json
         try:
@@ -67,6 +69,11 @@ class NetworkTraffic:
             else:
                 self._generate_traffic(traffic['src_host'],traffic['dst_host'],traffic['type'],traffic['data_size'],traffic['src_port'],traffic['dst_port'])
 
+        #show the traffic
+        for host, line in pmonitor(self.popens):
+            if host:
+                print("Host: {} - Line: {}".format(host,line))
+        
         print("\n\n{}  {}NETWORK TRAFFIC {} Network Traffic between all hosts completed{}\n\n".format(costants['ping_emote'], costants['ansi_green'],costants['ansi_white'],costants['ansi_white']))
 
     def _generate_traffic(self,host_src,host_dst,traffic_type,data_size,src_port,dst_port):
@@ -88,20 +95,19 @@ class NetworkTraffic:
 
         if traffic_type == 'TCP':
             #h2 should be listen on port dst_port
-            host_dst.cmd("iperf3 -s -p {} &".format(dst_port))
+
+            host_dst.popen("iperf3 -s -p {} &".format(dst_port))
             #h1 should send data to h2 sending data_size bytes
             data = bytes_to_kilobytes(int(data_size))
-            output = host_src.cmd("iperf3 -c {} -p {} -n {} -B {} --cport {} &".format(host_dst.IP(),dst_port,data,host_src.IP(),src_port))
-            print(output)
+            self.popens["{}:{} -> {}:{}".format(host_src,src_port,host_dst,dst_port)] = host_src.popen("iperf3 -c {} -p {} -n {} -B {} --cport {} &".format(host_dst.IP(),dst_port,data,host_src.IP(),src_port))
         elif traffic_type == 'UDP':
             #h2 should be listen on port dst_port
-            host_dst.cmd("iperf3 -s -p {} -u &".format(dst_port))
+            host_dst.popen("iperf3 -s -p {} -u &".format(dst_port))
             #h1 should send data to h2 sending data_size bytes
             data = bytes_to_kilobytes(int(data_size))
-            host_src.cmd("iperf3 -c {} -p {} -n {} -u -B {} --cport {} &".format(host_dst.IP(),dst_port,data,host_src.IP(),src_port))
+            self.popens["{}:{} -> {}:{}".format(host_src,src_port,host_dst,dst_port)] = host_src.popen("iperf3 -c {} -p {} -n {} -u -B {} --cport {} &".format(host_dst.IP(),dst_port,data,host_src.IP(),src_port))
         else:
-            #TODO dealing with data_size
-            host_src.cmd("arping -c 1 {}".format(host_dst.IP()))
+            self.popens["{} ARP {}".format(host_src,host_dst)] = host_src.popen("arping -c {} {}".format(data_size,host_dst.IP()))
 
         print("{}  {}Traffic {} Traffic generated from {} to {}{}".format(costants['ping_emote'], costants['ansi_green'],costants['ansi_white'],host_src,host_dst,costants['ansi_white']))
     
