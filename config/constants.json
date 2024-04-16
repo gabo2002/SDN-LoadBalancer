@@ -1,6 +1,6 @@
 {
     "debug": true,
-    "cost_protcol": "HOP",
+    "cost_protocol": "HOP",
     "controller_port": 6969,
     "controller_host": "localhost",
 

@@ -490,6 +490,7 @@ class RyuController(app_manager.RyuApp):
     #Create the network graph using the network topology
     def create_net_graph(self):
         net = nx.DiGraph()
+        print(costants)
         for link in get_all_link(self):
             if costants['cost_protocol'] == 'HOP':
                 weight = self.cost_function_using_hop_count(net,link.src.dpid,link.dst.dpid)
