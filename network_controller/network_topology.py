@@ -99,5 +99,22 @@ class NetworkTopology(Topo):
                     print_error("The link between switch {} and switch {} is redundant".format(link[0], link[1]))
                     raise Exception('Redundant switch connections')
                 links.add(link)
+        
+        #validate hosts
+        for switch in json_data['switches']:
+            for host in switch['hosts']:
+                keys = host.keys()
+                for key in keys:
+                    if key not in ['hostid', 'ip', 'bw']:
+                        print_error("Invalid JSON file: invalid key found: {} should not be here".format(key))
+                        raise Exception('Invalid JSON file')
+                
+                if len(host.keys()) != 3:
+                    print_error("Invalid JSON file: missing keys in host")
+                    raise Exception('Invalid JSON file')
+
+                if host['bw'] <= 0:
+                    print_error("Invalid JSON file: invalid bandwidth: {}".format(host['bw']))
+                    raise Exception('Invalid JSON file')
 
         return json_data
