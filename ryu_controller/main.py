@@ -4,7 +4,7 @@ from ryu.controller.handler import CONFIG_DISPATCHER, MAIN_DISPATCHER
 from ryu.controller.handler import set_ev_cls
 from ryu.ofproto import ofproto_v1_3
 from ryu.topology.api import get_switch, get_link, get_all_host, get_all_switch, get_all_link
-from ryu.lib.packet import packet, ethernet, ether_types, ipv4, tcp, udp
+from ryu.lib.packet import packet, ethernet, ether_types, ipv4, tcp, udp, arp
 from utils import print_debug,print_error,print_path,costants
 import networkx as nx
 import random
@@ -144,6 +144,11 @@ class RyuController(app_manager.RyuApp):
         #Check if the packet is an ethernet packet
         if eth is None:
             print_error("No ethernet packet found")
+            return
+        
+        #check if the packet is an arp packet
+        if eth.ethertype == ether_types.ETH_TYPE_ARP:
+            self.proxy_arp_handler(msg,datapath,parser,ofproto,in_port,eth)
             return
         
         #check if the packet is an LLDP packet
@@ -383,6 +388,62 @@ class RyuController(app_manager.RyuApp):
         )
 
         datapath.send_msg(mod)
+
+    #Event handler executed when a packet in message is received from a switch and the packet is an ARP packet
+    def proxy_arp_handler(self,msg,datapath,parser,ofproto,in_port,eth):
+        #Getting the packet in message
+        pkt = packet.Packet(msg.data)
+        #get the arp packet
+        arp_pkt = pkt.get_protocol(arp.arp)
+        
+        #If it's not an ARP request, ignore the packet
+        if arp_pkt.opcode != arp.ARP_REQUEST:
+            return
+
+        #Getting the destination MAC address
+        dst_mac = None
+
+        for host in get_all_host(self):
+            if arp_pkt.dst_ip in host.ipv4:
+                dst_mac = host.mac
+                break
+
+        if dst_mac is None:
+            print_debug("Destination MAC address not found for arp request with ip: {}".format(arp_pkt.dst_ip))
+            return
+        
+        #creating a packet out message
+        packet_out = packet.Packet()
+
+        eth_out = ethernet.ethernet(
+            dst = eth.src,
+            src = dst_mac,
+            ethertype = ether_types.ETH_TYPE_ARP
+        )
+
+        arp_out = arp.arp(
+            opcode = arp.ARP_REPLY,
+            src_mac = dst_mac,
+            src_ip = arp_pkt.dst_ip,
+            dst_mac = arp_pkt.src_mac,
+            dst_ip = arp_pkt.src_ip
+        )
+
+        packet_out.add_protocol(eth_out)
+        packet_out.add_protocol(arp_out)
+        packet_out.serialize()
+
+        actions = [parser.OFPActionOutput(in_port)] #output port
+
+        #Creating the packet out message
+        out = parser.OFPPacketOut(
+            datapath=datapath,
+            buffer_id=ofproto.OFP_NO_BUFFER,
+            in_port=ofproto.OFPP_CONTROLLER,
+            actions=actions,
+            data=packet_out.data
+        )
+        datapath.send_msg(out)
 
     #Find the switch and port where the destination host is connected to
     def _find_destination_switch(self,dst): 
