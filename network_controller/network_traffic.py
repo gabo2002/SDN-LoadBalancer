@@ -65,19 +65,27 @@ class NetworkTraffic:
 
         for traffic in self.traffic:
             if traffic['type'] == 'ARP':
-                self._generate_traffic(traffic['src_host'],traffic['dst_host'],traffic['type'],0,0,0)
+                self._generate_traffic(traffic['src_host'],traffic['dst_host'],traffic['type'],traffic['data_size'])
             else:
-                self._generate_traffic(traffic['src_host'],traffic['dst_host'],traffic['type'],traffic['data_size'],traffic['src_port'],traffic['dst_port'])
+                self._generate_traffic(traffic['src_host'],traffic['dst_host'],traffic['type'],traffic['data_size'],src_port=traffic['src_port'],dst_port=traffic['dst_port'])
 
+        self.stdout_traffic = dict()
         #show the traffic
         for host, line in pmonitor(self.popens):
             if host:
-                print("Host: {} - Line: {}".format(host,line))
-        
-        print("\n\n{}  {}NETWORK TRAFFIC {} Network Traffic between all hosts completed{}\n\n".format(costants['ping_emote'], costants['ansi_green'],costants['ansi_white'],costants['ansi_white']))
+                if host not in self.stdout_traffic:
+                    self.stdout_traffic[host] = line
+                else:
+                    self.stdout_traffic[host] += line
+            
+        for host, line in self.stdout_traffic.items():
+            print("\n\n{}  {}NETWORK TRAFFIC {} Traffic output for host: {}\n\n".format(costants['ping_emote'], costants['ansi_green'],costants['ansi_white'],host))
+            print(line)
 
-    def _generate_traffic(self,host_src,host_dst,traffic_type,data_size,src_port,dst_port):
-        print("{}  {}Traffic {} Generating Traffic from {} to {}{}".format(costants['ping_emote'], costants['ansi_red'],costants['ansi_white'],host_src,host_dst,costants['ansi_white']))
+        print("\n\n{}  {}NETWORK TRAFFIC {} Network Traffic between all hosts completed\n\n".format(costants['ping_emote'], costants['ansi_green'],costants['ansi_white']))
+
+    def _generate_traffic(self,host_src,host_dst,traffic_type,data_size,src_port=0,dst_port=0):
+        print("{}  {}Traffic {} Generating Traffic from {} to {}".format(costants['ping_emote'], costants['ansi_red'],costants['ansi_white'],host_src,host_dst))
 
         try:
             host_src = self.network_controller.get(host_src)
@@ -107,7 +115,7 @@ class NetworkTraffic:
             data = bytes_to_kilobytes(int(data_size))
             self.popens["{}:{} -> {}:{}".format(host_src,src_port,host_dst,dst_port)] = host_src.popen("iperf3 -c {} -p {} -n {} -u -B {} --cport {} &".format(host_dst.IP(),dst_port,data,host_src.IP(),src_port))
         else:
-            self.popens["{} ARP {}".format(host_src,host_dst)] = host_src.popen("arping -c {} {}".format(data_size,host_dst.IP()))
+            self.popens["{} ARP {}".format(host_src,host_dst)] = host_src.popen("arping -C {} {}".format(data_size,host_dst.IP()))
 
         print("{}  {}Traffic {} Traffic generated from {} to {}{}".format(costants['ping_emote'], costants['ansi_green'],costants['ansi_white'],host_src,host_dst,costants['ansi_white']))
     
