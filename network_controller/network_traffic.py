@@ -107,13 +107,13 @@ class NetworkTraffic:
             host_dst.popen("iperf3 -s -p {} &".format(dst_port))
             #h1 should send data to h2 sending data_size bytes
             data = bytes_to_kilobytes(int(data_size))
-            self.popens["{}:{} -> {}:{}".format(host_src,src_port,host_dst,dst_port)] = host_src.popen("iperf3 -c {} -p {} -n {} -B {} --cport {} &".format(host_dst.IP(),dst_port,data,host_src.IP(),src_port))
+            self.popens["{}:{} -> {}:{}".format(host_src,src_port,host_dst,dst_port)] = host_src.popen("iperf3 -c {} -p {} -n {}k -B {} --cport {} &".format(host_dst.IP(),dst_port,data,host_src.IP(),src_port))
         elif traffic_type == 'UDP':
             #h2 should be listen on port dst_port
-            host_dst.popen("iperf3 -s -p {} -u &".format(dst_port))
+            host_dst.popen("iperf3 -s -p {} &".format(dst_port))
             #h1 should send data to h2 sending data_size bytes
             data = bytes_to_kilobytes(int(data_size))
-            self.popens["{}:{} -> {}:{}".format(host_src,src_port,host_dst,dst_port)] = host_src.popen("iperf3 -c {} -p {} -n {} -u -B {} --cport {} &".format(host_dst.IP(),dst_port,data,host_src.IP(),src_port))
+            self.popens["{}:{} -> {}:{}".format(host_src,src_port,host_dst,dst_port)] = host_src.popen("iperf3 -c {} -p {} -n {}k -u -B {} --cport {} &".format(host_dst.IP(),dst_port,data,host_src.IP(),src_port))
         else:
             self.popens["{} ARP {}".format(host_src,host_dst)] = host_src.popen("arping -C {} {}".format(data_size,host_dst.IP()))
 
