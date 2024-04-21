@@ -11,11 +11,8 @@ import time
 from utils import costants
 
 def main():
-    #Get the path of the switches.json file
-    path = utils.get_file_path(__file__, '../config/switches.json')
-
     #Create a network topology object
-    topology = NetworkTopology(path)
+    topology = NetworkTopology()
     
     #Create a Mininet object
     print("\n\n{}  {}NETWORK {}Creating Mininet network{}\n\n".format(costants['net_emote'], costants['ansi_red'],costants['ansi_white'],costants['ansi_white']))

@@ -11,9 +11,9 @@ costants = utils.load_costants()
 # Create a class called NetworkTopology that inherits from the Topo class in Mininet, it represents the network topology
 class NetworkTopology(Topo):
 
-    def __init__(self, json_path):
-        print("\n\n{}  {}NETWORK TOPOLOGY {} Inizializing custom network topology from config file located in: {}{}{}\n\n".format(costants['net_emote'], costants['ansi_red'],costants['ansi_white'],costants['ansi_blue'], json_path, costants['ansi_white']))
-        self.json_path = json_path
+    def __init__(self):
+        self.json_path = utils.get_file_path(__file__, "../config/{}/switches.json".format(costants['topology_folder_location']))
+        print("\n\n{}  {}NETWORK TOPOLOGY {} Inizializing custom network topology from config file located in: {}{}{}\n\n".format(costants['net_emote'], costants['ansi_red'],costants['ansi_white'],costants['ansi_blue'], self.json_path, costants['ansi_white']))
         Topo.__init__(self)
 
 
@@ -93,8 +93,8 @@ class NetworkTopology(Topo):
         #redundant switch connections
         links = set()
         for switch in json_data['switches']:
-            for connected_switch in str(switch['id']):
-                link = (switch['id'], connected_switch)
+            for connected_switch in switch['connected_switches']:
+                link = (switch['id'], connected_switch['switchid'])
                 if link in links or (link[1], link[0]) in links:
                     print_error("The link between switch {} and switch {} is redundant".format(link[0], link[1]))
                     raise Exception('Redundant switch connections')
