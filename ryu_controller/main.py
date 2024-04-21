@@ -3,11 +3,12 @@ from ryu.controller import ofp_event
 from ryu.controller.handler import CONFIG_DISPATCHER, MAIN_DISPATCHER
 from ryu.controller.handler import set_ev_cls
 from ryu.ofproto import ofproto_v1_3
-from ryu.topology.api import get_switch, get_link, get_all_host, get_all_switch, get_all_link
+from ryu.topology.api import get_all_host, get_all_link
 from ryu.lib.packet import packet, ethernet, ether_types, ipv4, tcp, udp, arp
-from utils import print_debug,print_error,print_path,costants
+from utils import print_debug,print_error,print_path,get_file_path,costants
 import networkx as nx
 import random
+import logging
 
 
 '''
@@ -41,7 +42,6 @@ import random
 
     This is the basic flow entry table for the switches, the controller will push new rules to the switches to route the packets
 '''
-
 class RyuController(app_manager.RyuApp):
     OFP_VERSIONS = [ofproto_v1_3.OFP_VERSION]
 
@@ -49,7 +49,20 @@ class RyuController(app_manager.RyuApp):
         super(RyuController, self).__init__(*args, **kwargs)
         self.connections = list()
         self.net = None
-
+        #Logging
+        log_file_name = get_file_path(__file__, "../ryu_controller.log")
+        root_logger = logging.getLogger()
+        root_logger.handlers = []
+        debug_level = logging.DEBUG if costants['debug'] == True else logging.INFO
+        logging.basicConfig(level=debug_level,filename=log_file_name,filemode='a',format='%(asctime)s - %(levelname)s - %(message)s')
+        self.logger = logging.getLogger("RyuController")
+        self.logger.setLevel(logging.DEBUG)
+        #File handler
+        fh = logging.FileHandler(log_file_name)
+        fh.setLevel(logging.DEBUG)
+        fh.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(message)s'))
+        self.logger.addHandler(fh)
+        
     #Event handler executed when a switch connects to the controller
     @set_ev_cls(ofp_event.EventOFPSwitchFeatures, CONFIG_DISPATCHER)
     def switch_default_features_handler(self, ev):
@@ -223,6 +236,10 @@ class RyuController(app_manager.RyuApp):
             print("Link from switch {} to final host using port: {}".format(datapath.id,output_port))
             #send the packet to the host
             self.send_odf_flow_mod(datapath,parser,match,actions,1000)
+
+            #route the packet to the host
+            self.send_packet_out(datapath,parser,actions,in_port,msg)
+
         elif self._path_already_exists(src_port,dst_port,ip.src,ip.dst):
             print("This path has been already calculated! Fetching the path from internal memory...")
             #I have to find the path and forward the packet
@@ -296,6 +313,9 @@ class RyuController(app_manager.RyuApp):
                 )
             #send the packet to the next switch
             self.send_odf_flow_mod(datapath,parser,match,actions,1000)
+
+            #Creating the packet out message
+            self.send_packet_out(datapath,parser,actions,in_port,msg)
         else:
             pathsList = nx.all_shortest_paths(self.net, source=datapath.id, target=dst_switch, weight='weight', method='dijkstra')
             #iterable to list 
@@ -342,7 +362,10 @@ class RyuController(app_manager.RyuApp):
             print("Link from switch {} to host using port: {}".format(path[0],first_link['port']))
             #send the packet to the next switch
             self.send_odf_flow_mod(datapath,parser,match,actions,1000)
-        
+
+            #Creating the packet out message
+            self.send_packet_out(datapath,parser,actions,in_port,msg)
+            
     #Event handler executed when a packet in message is received from a switch and the packet is a TCP or UDP packet
     def _packet_in_not_TCP_or_UDP_handler(self,msg,datapath,parser,ofproto,in_port,eth):
         dst = eth.dst
@@ -468,39 +491,22 @@ class RyuController(app_manager.RyuApp):
         except nx.NetworkXNoPath:
             print_error("No path found from {} to {}".format(source_id,destination_id))
             return None
+        except nx.NodeNotFound as e:
+            print_error("Node not found, maybe the switch is not connected to the network, please check the network topology")
+            print_error("Error: {}".format(e))
+            return None
 
     @set_ev_cls(ofp_event.EventOFPPortStatsReply, MAIN_DISPATCHER)
     def flow_stats_reply_handler(self, ev):
-        return
         for stat in ev.msg.body:
-            print("Port: {}".format(stat.port_no))
-            print("Rx Packets: {}".format(stat.rx_packets))
-            print("Tx Packets: {}".format(stat.tx_packets))
-            print("Rx Bytes: {}".format(stat.rx_bytes))
-            print("Tx Bytes: {}".format(stat.tx_bytes))
-            print("Rx Errors: {}".format(stat.rx_errors))
-            print("Tx Errors: {}".format(stat.tx_errors))
-            print("Rx Dropped: {}".format(stat.rx_dropped))
-            print("Tx Dropped: {}".format(stat.tx_dropped))
-            print("Collisions: {}".format(stat.collisions))
-            print("Duration Sec: {}".format(stat.duration_sec))
-            print("Duration Nsec: {}".format(stat.duration_nsec))
+            # Log the statistics
+            self.logger.debug("Switch id: {} Port: {} Rx Packets: {}, Tx Packets: {}, Rx Bytes: {}, Tx Bytes: {}, Rx Errors: {}, Tx Errors: {}, Rx Dropped: {}, Tx Dropped: {}, Collisions: {}, Duration Sec: {}, Duration Nsec: {}".format(
+                ev.msg.datapath.id, stat.port_no,stat.rx_packets, stat.tx_packets, stat.rx_bytes, stat.tx_bytes, stat.rx_errors, stat.tx_errors, stat.rx_dropped, stat.tx_dropped, stat.collisions, stat.duration_sec, stat.duration_nsec))
 
     @set_ev_cls(ofp_event.EventOFPPortDescStatsReply, MAIN_DISPATCHER)
     def stats_speed_reply(self,ev):
-        return
         for p in ev.msg.body:
-            print("Port: {}".format(p.port_no))
-            print("HwAddr: {}".format(p.hw_addr))
-            print("Name: {}".format(p.name))
-            print("Config: {}".format(p.config))
-            print("State: {}".format(p.state))
-            print("Curr: {}".format(p.curr))
-            print("Advertised: {}".format(p.advertised))
-            print("Supported: {}".format(p.supported))
-            print("Peer: {}".format(p.peer))
-            print("Curr Speed: {}".format(p.curr_speed))
-            print("Max Speed: {}".format(p.max_speed))
+            self.logger.debug("Switch id: {} Port: {} HwAddr: {} Name: {} Config: {} State: {} Curr: {} Advertised: {} Supported: {} Peer: {} Curr Speed: {} Max Speed: {}".format(p.dpid,p.port_no,p.hw_addr,p.name,p.config,p.state,p.curr,p.advertised,p.supported,p.peer,p.curr_speed,p.max_speed))
 
     #Cost function using hop count
     def cost_function_using_hop_count(self,net,src,dst):
@@ -551,7 +557,6 @@ class RyuController(app_manager.RyuApp):
     #Create the network graph using the network topology
     def create_net_graph(self):
         net = nx.DiGraph()
-        print(costants)
         for link in get_all_link(self):
             if costants['cost_protocol'] == 'HOP':
                 weight = self.cost_function_using_hop_count(net,link.src.dpid,link.dst.dpid)
@@ -571,6 +576,16 @@ class RyuController(app_manager.RyuApp):
         inst = [parser.OFPInstructionActions(ofproto.OFPIT_APPLY_ACTIONS, actions)]
         mod = parser.OFPFlowMod(datapath=datapath, priority=priority, match=match, instructions=inst)
         datapath.send_msg(mod)
+    
+    def send_packet_out(self,datapath,parser,actions,in_port,msg):
+        out = parser.OFPPacketOut(
+            datapath=datapath,
+            buffer_id=msg.buffer_id,
+            in_port=in_port,
+            actions=actions,
+            data=msg.data
+        )
+        datapath.send_msg(out)
 
 if __name__ == '__main__':
     controller = RyuController()

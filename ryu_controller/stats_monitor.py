@@ -1,13 +1,10 @@
 from ryu.base import app_manager
 from ryu.controller import ofp_event
-from ryu.controller.handler import CONFIG_DISPATCHER, MAIN_DISPATCHER
+from ryu.controller.handler import CONFIG_DISPATCHER
 from ryu.controller.handler import set_ev_cls
 from ryu.ofproto import ofproto_v1_3
-from ryu.topology.api import get_switch, get_link, get_all_host, get_all_switch, get_all_link
-from ryu.lib.packet import packet, ethernet, ether_types
 from ryu.lib import hub
 from utils import print_debug,print_error
-import networkx as nx
 
 class ControllerStatsMonitor(app_manager.RyuApp):
     OFP_VERSIONS = [ofproto_v1_3.OFP_VERSION]
@@ -40,10 +37,14 @@ class ControllerStatsMonitor(app_manager.RyuApp):
         datapath.send_msg(req)
         
     def _monitor(self):
-        while True:
-            for dp in self.datapaths:
-                pass
-                self.request_stats(dp)
-                self.request_speed_stats(dp)
-            hub.sleep(self.sleep)
-
+        try:
+            while True:
+                for dp in self.datapaths:
+                    pass
+                    self.request_stats(dp)
+                    self.request_speed_stats(dp)
+                hub.sleep(self.sleep)
+        except Exception as e:
+            print_error("Received exception {} in monitor thread".format(str(e)))
+            print_error("Exiting...")
+            exit(1)
