@@ -1,0 +1,107 @@
+{
+    "switches": [
+        {
+            "id" : "S1",
+            "hosts" : [],
+            "connected_switches" : [
+                {
+                    "switchid" : "S2",
+                    "bw" : 100
+                },
+                {
+                    "switchid" : "S3",
+                    "bw" : 100
+                }
+            ]
+        },
+        {
+            "id" : "S2",
+            "hosts" : [
+                {
+                    "hostid" : "H1",
+                    "ip" : "192.168.0.1",
+                    "bw" : 10
+                }
+            ],
+            "connected_switches" : [
+                {
+                    "switchid" : "S4",
+                    "bw" : 100
+                }
+            ]
+        },
+		{
+            "id" : "S3",
+            "hosts" : [],
+            "connected_switches" : [
+                {
+                    "switchid" : "S5",
+                    "bw" : 100
+                },
+                {
+                    "switchid" : "S6",
+                    "bw" : 100
+                }
+            ]
+        },
+		{
+            "id" : "S4",
+            "hosts" : [
+                {
+                    "hostid" : "H2",
+                    "ip" : "192.168.0.2",
+                    "bw" : 100
+                },
+                {
+                    "hostid" : "H3",
+                    "ip" : "192.168.0.3",
+                    "bw" : 100
+                }
+            ],
+            "connected_switches" : []
+        },
+		{
+            "id" : "S5",
+            "hosts" : [
+                {
+                    "hostid" : "H5",
+                    "ip" : "192.168.0.5",
+                    "bw" : 1
+                }
+            ],
+            "connected_switches" : [
+                {
+                    "switchid" : "S7",
+                    "bw" : 100
+                }
+            ]
+        },
+        {
+            "id" : "S6",
+            "hosts" : [
+                {
+                    "hostid" : "H6",
+                    "ip" : "192.168.0.6",
+                    "bw" : 1
+                },
+                {
+                    "hostid" : "H7",
+                    "ip" : "192.168.0.7",
+                    "bw" : 1
+                }
+            ],
+            "connected_switches" : []
+        },
+        {
+            "id" : "S7",
+            "hosts" : [
+                {
+                    "hostid" : "H4",
+                    "ip" : "192.168.0.4",
+                    "bw": 100
+                }
+            ],
+            "connected_switches" : []
+        }
+    ]
+}

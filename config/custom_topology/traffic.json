@@ -14,7 +14,7 @@
             "dst_host":"H13",
             "src_port" : 4000,
             "dst_port" : 8080,
-            "data_size": 10000
+            "data_size": 100000
         },
         {
             "type" : "TCP",
@@ -22,7 +22,7 @@
             "dst_host":"H5",
             "src_port" : 1234,
             "dst_port" : 4321,
-            "data_size": 40000
+            "data_size": 400000
         },
         {
             "type" : "ARP",

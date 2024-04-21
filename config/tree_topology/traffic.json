@@ -1,0 +1,50 @@
+{
+    "traffic": [
+        {
+            "type" : "TCP",
+            "src_host":"H1",
+            "dst_host":"H7",
+            "src_port" : 8000,
+            "dst_port" : 8080,
+            "data_size": 10000
+        },
+        {
+            "type" : "UDP",
+            "src_host":"H1",
+            "dst_host":"H4",
+            "src_port" : 8000,
+            "dst_port" : 8080,
+            "data_size": 10000
+        },
+        {
+            "type" : "TCP",
+            "src_host":"H4",
+            "dst_host":"H3",
+            "src_port" : 4500,
+            "dst_port" : 2345,
+            "data_size": 100000
+        },
+        {
+            "type" : "UDP",
+            "src_host":"H4",
+            "dst_host":"H5",
+            "src_port" : 8000,
+            "dst_port" : 8080,
+            "data_size": 10000
+        },
+        {
+            "type": "ARP",
+            "src_host": "H1",
+            "dst_host": "H2",
+            "data_size": 10
+        },
+        {
+            "type": "UDP",
+            "src_host": "H2",
+            "dst_host": "H6",
+            "src_port": 5000,
+            "dst_port": 17000,
+            "data_size": 100000
+        }
+    ]
+}

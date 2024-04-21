@@ -1,6 +1,7 @@
 {
     "debug": true,
     "cost_protocol": "HOP",
+    "topology_folder_location": "custom_topology",
     "controller_port": 6969,
     "controller_host": "localhost",
 
