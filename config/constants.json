@@ -1,9 +1,10 @@
 {
     "debug": true,
-    "cost_protocol": "HOP",
-    "topology_folder_location": "custom_topology",
+    "cost_protocol": "OSPF",
+    "topology_folder_location": "ring_topology",
     "controller_port": 6969,
     "controller_host": "localhost",
+    "OSPF_reference_bandwidth": 100000000,
 
     "ansi_red": "\u001b[31m",
     "ansi_green": "\u001b[32m",

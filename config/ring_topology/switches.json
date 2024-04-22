@@ -6,13 +6,13 @@
                 {
                     "hostid" : "H1",
                     "ip" : "192.168.0.1",
-                    "bw" : 1
+                    "bw" : 1000
                 }
             ],
             "connected_switches" : [
                 {
                     "switchid" : "S5",
-                    "bw" : 1
+                    "bw" : 1000
                 },
 				{
                     "switchid" : "S2",
@@ -26,13 +26,13 @@
                 {
                     "hostid" : "H2",
                     "ip" : "192.168.0.2",
-                    "bw" : 1
+                    "bw" : 1000
                 }
             ],
             "connected_switches" : [
 				{
                     "switchid" : "S3",
-                    "bw" : 1
+                    "bw" : 1000
                 }
             ]
         },
@@ -48,7 +48,7 @@
             "connected_switches" : [
 				{
                     "switchid" : "S4",
-                    "bw" : 1
+                    "bw" : 1000
                 }
             ]
         },
@@ -58,7 +58,7 @@
             "connected_switches" : [
 				{
                     "switchid" : "S6",
-                    "bw" : 1
+                    "bw" : 1000
                 },
                 {
                     "switchid" : "S7",
@@ -78,7 +78,7 @@
             "connected_switches" : [
 				{
                     "switchid" : "S6",
-                    "bw" : 1
+                    "bw" : 1000
                 }
             ]
         },

@@ -1,6 +1,14 @@
 {
     "traffic": [
         {
+            "type": "TCP",
+            "src_host": "H1",
+            "dst_host": "H2",
+            "src_port": 5000,
+            "dst_port": 6000,
+            "data_size": 1000000
+        },
+        {
             "type" : "TCP",
             "src_host":"H1",
             "dst_host":"H6",
