@@ -32,6 +32,7 @@ def main():
     #Ping all the hosts to check the reachability
     traffic_controller.ping_all()
 
+    time.sleep(2)
     #Generate traffic between all the hosts
     traffic_controller.generate_all_traffic()
 

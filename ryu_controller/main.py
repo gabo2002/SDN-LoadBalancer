@@ -3,12 +3,15 @@ from ryu.controller import ofp_event
 from ryu.controller.handler import CONFIG_DISPATCHER, MAIN_DISPATCHER
 from ryu.controller.handler import set_ev_cls
 from ryu.ofproto import ofproto_v1_3
-from ryu.topology.api import get_all_host, get_all_link
+from ryu.topology.api import get_all_host, get_all_link, get_all_switch
 from ryu.lib.packet import packet, ethernet, ether_types, ipv4, tcp, udp, arp
 from utils import print_debug,print_error,print_path,get_file_path,costants
 import networkx as nx
 import random
 import logging
+import time
+import json
+import traceback
 
 
 '''
@@ -49,6 +52,10 @@ class RyuController(app_manager.RyuApp):
         super(RyuController, self).__init__(*args, **kwargs)
         self.connections = list()
         self.net = None
+        self.switch_stats = dict() #switch ports statistics
+        self.nominal_bandwidth = dict() #nominal bandwidth obtained from the switch
+
+        self.timestart = time.time()
         #Logging
         log_file_name = get_file_path(__file__, "../ryu_controller.log")
         root_logger = logging.getLogger()
@@ -499,6 +506,44 @@ class RyuController(app_manager.RyuApp):
     @set_ev_cls(ofp_event.EventOFPPortStatsReply, MAIN_DISPATCHER)
     def flow_stats_reply_handler(self, ev):
         for stat in ev.msg.body:
+            if stat.port_no == 4294967294: #4294967294 is the special port number for the entire switch
+                continue
+            #I should find the dst switch and port
+            found = False
+            dst_id = None
+            for link in get_all_link(self):
+                if link.src.dpid == ev.msg.datapath.id:
+                    if link.src.port_no == stat.port_no:
+                        found = True
+                        dst_id = link.dst.dpid
+                        break
+            
+            if not found: #if the port is not found, the connection is a switch-host connection
+                continue
+
+            link = "{}:{}".format(ev.msg.datapath.id,dst_id)
+            if link not in self.switch_stats.keys():
+                self.switch_stats[link] = list()
+
+            temp = dict()
+            temp['rx_bytes'] = stat.rx_bytes
+            temp['tx_bytes'] = stat.tx_bytes
+            temp['timestamp'] = time.time()
+
+            if len(self.switch_stats[link]) > 0:
+                #calculate the bandwidth
+                prev = self.switch_stats[link][-1]
+                duration = temp['timestamp'] - prev['timestamp']
+                if duration == 0:
+                    duration = 1
+                #bandwidth in bits per second
+                temp['bandwidth'] = (temp['rx_bytes'] + temp['tx_bytes'] - prev['rx_bytes'] - prev['tx_bytes']) * 8 / duration
+
+            self.switch_stats[link].append(temp)            
+            #remove old data from the list
+            if len(self.switch_stats[link]) > 2:
+                self.switch_stats[link].pop(0)
+            
             # Log the statistics
             self.logger.debug("Switch id: {} Port: {} Rx Packets: {}, Tx Packets: {}, Rx Bytes: {}, Tx Bytes: {}, Rx Errors: {}, Tx Errors: {}, Rx Dropped: {}, Tx Dropped: {}, Collisions: {}, Duration Sec: {}, Duration Nsec: {}".format(
                 ev.msg.datapath.id, stat.port_no,stat.rx_packets, stat.tx_packets, stat.rx_bytes, stat.tx_bytes, stat.rx_errors, stat.tx_errors, stat.rx_dropped, stat.tx_dropped, stat.collisions, stat.duration_sec, stat.duration_nsec))
@@ -506,22 +551,86 @@ class RyuController(app_manager.RyuApp):
     @set_ev_cls(ofp_event.EventOFPPortDescStatsReply, MAIN_DISPATCHER)
     def stats_speed_reply(self,ev):
         for p in ev.msg.body:
-            self.logger.debug("Switch id: {} Port: {} HwAddr: {} Name: {} Config: {} State: {} Curr: {} Advertised: {} Supported: {} Peer: {} Curr Speed: {} Max Speed: {}".format(p.dpid,p.port_no,p.hw_addr,p.name,p.config,p.state,p.curr,p.advertised,p.supported,p.peer,p.curr_speed,p.max_speed))
+            if p.port_no == 4294967294: #4294967294 is the special port number for the entire switch
+                continue
+            
+            link = "{}:{}".format(ev.msg.datapath.id,p.port_no)
+            self.nominal_bandwidth[link] = p.curr_speed * 1000 #kbps to bps
+            self.logger.debug("Switch id: {} Port: {} HwAddr: {} Name: {} Config: {} State: {} Curr: {} Advertised: {} Supported: {} Peer: {} Curr Speed: {} Max Speed: {}".format(ev.msg.datapath.id,p.port_no,p.hw_addr,p.name,p.config,p.state,p.curr,p.advertised,p.supported,p.peer,p.curr_speed,p.max_speed))
 
     #Cost function using hop count
-    def cost_function_using_hop_count(self,net,src,dst):
+    def cost_function_using_hop_count(self,src,dst):
         return 1
 
     #Cost function using OSPF
-    def cost_function_using_OSPF(self,net,src,dst):
-        #TODO: implement OSPF cost function
-        return 1
+    def cost_function_using_OSPF(self,src,dst):
+        bandwidth = self._load_nominal_bandwidth()
+
+        link_name = "{}:{}".format(src,dst)
+        if link_name not in bandwidth.keys():
+            print_debug("Link {} not found in the nominal bandwidth list".format(link_name))
+            return costants['OSPF_reference_bandwidth']
+        
+        cost = float(costants['OSPF_reference_bandwidth']) / float(bandwidth[link_name])
+        return cost
 
     #Cost function using dynamic bandwidth
     def cost_function_using_dynamic_bandwidth(self,src,dst):
-        #TODO: implement dynamic bandwidth cost function
-        return 1
+        bandwidth = self._load_nominal_bandwidth()
+
+        link_name = "{}:{}".format(src,dst)
+        if link_name not in bandwidth.keys():
+            print_debug("Link {} not found in the nominal bandwidth list".format(link_name))
+            return costants['OSPF_reference_bandwidth']
+        
+        # cost = OSPF reference bandwidth / actual free bandwidth
+        nominal_bandwidth = bandwidth[link_name]
+        try:
+            current_used_bandwidth = self.switch_stats[link_name][-1]['bandwidth']
+        except Exception:
+            current_used_bandwidth = 0
+        
+        available_bandwidth = nominal_bandwidth - current_used_bandwidth
+        cost = float(costants['OSPF_reference_bandwidth']) / float(available_bandwidth)
+        return cost
     
+    #This function return 
+    def _load_nominal_bandwidth(self):
+        bandwidth = dict()
+        if costants['debug']:
+            #Load nominal bandwidth from file
+            try:
+                path = get_file_path(__file__ , "../config/{}/switches.json".format(costants['topology_folder_location']))
+                file = open(path,'r')
+                json_data = json.load(file)
+                file.close()
+                for switch in json_data['switches']:
+                    switch_id = str(switch['id'])[1:]
+                    for connected_switch in switch['connected_switches']:
+                        connected_switch_id = str(connected_switch['switchid'])[1:]
+                        link_bw_s = int(connected_switch['bw']) #mbps
+                        link_bw_b = link_bw_s * 1000000
+                        bandwidth["{}:{}".format(switch_id,connected_switch_id)] = link_bw_b
+                        bandwidth["{}:{}".format(connected_switch_id,switch_id)] = link_bw_b
+            except Exception as e:
+                print_error("Received exception {} while loading switches from JSON file".format(str(e)))
+                print_error("Traceback: {}".format(traceback.format_exc()))
+                exit(1)
+        else:
+            #Load nominal bandwidth from the network by getting the port description
+            for switch in get_all_switch(self):
+                for link in get_all_link(self):
+                    if link.src.dpid == switch.dp.id:
+                        try:
+                            link_bw = self.nominal_bandwidth["{}:{}".format(switch.dp.id,link.src.port_no)]    
+                            bandwidth["{}:{}".format(link.src.dpid,link.dst.dpid)] = link_bw
+                            bandwidth["{}:{}".format(link.dst.dpid,link.src.dpid)] = link_bw
+                        except Exception:
+                            print("Link {} not found in the nominal bandwidth list, using DEFAULT cost".format("{}:{}".format(switch.dp.id,link.src.port_no)))
+                            bandwidth["{}:{}".format(link.src.dpid,link.dst.dpid)] = costants['OSPF_reference_bandwidth']
+                            bandwidth["{}:{}".format(link.dst.dpid,link.src.dpid)] = costants['OSPF_reference_bandwidth']
+        return bandwidth
+
     #Check if the path has been already calculated
     def _path_already_exists(self,src_port,dst_port,src_ip,dst_ip):
         for connection in self.connections:
@@ -559,7 +668,7 @@ class RyuController(app_manager.RyuApp):
         net = nx.DiGraph()
         for link in get_all_link(self):
             if costants['cost_protocol'] == 'HOP':
-                weight = self.cost_function_using_hop_count(net,link.src.dpid,link.dst.dpid)
+                weight = self.cost_function_using_hop_count(link.src.dpid,link.dst.dpid)
             elif costants['cost_protocol'] == 'OSPF':
                 weight = self.cost_function_using_OSPF(link.src.dpid,link.dst.dpid)
             elif costants['cost_protocol'] == 'DYNAMIC_BANDWIDTH':
@@ -586,6 +695,3 @@ class RyuController(app_manager.RyuApp):
             data=msg.data
         )
         datapath.send_msg(out)
-
-if __name__ == '__main__':
-    controller = RyuController()

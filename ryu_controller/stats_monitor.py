@@ -13,7 +13,7 @@ class ControllerStatsMonitor(app_manager.RyuApp):
         super(ControllerStatsMonitor, self).__init__(*args, **kwargs)
         self.datapaths = set()
         self.monitor_thread = hub.spawn(self._monitor)
-        self.sleep = 5
+        self.sleep = 2
 
     @set_ev_cls(ofp_event.EventOFPSwitchFeatures, CONFIG_DISPATCHER)
     def switch_default_features_handler(self, ev):
@@ -40,10 +40,12 @@ class ControllerStatsMonitor(app_manager.RyuApp):
         try:
             while True:
                 for dp in self.datapaths:
-                    pass
                     self.request_stats(dp)
                     self.request_speed_stats(dp)
-                hub.sleep(self.sleep)
+                if len(self.datapaths) > 0:
+                    hub.sleep(self.sleep)
+                else:
+                    hub.sleep(1)
         except Exception as e:
             print_error("Received exception {} in monitor thread".format(str(e)))
             print_error("Exiting...")

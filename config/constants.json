@@ -1,6 +1,6 @@
 {
     "debug": true,
-    "cost_protocol": "OSPF",
+    "cost_protocol": "DYNAMIC_BANDWIDTH",
     "topology_folder_location": "ring_topology",
     "controller_port": 6969,
     "controller_host": "localhost",
