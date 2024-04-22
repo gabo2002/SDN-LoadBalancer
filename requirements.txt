@@ -1,0 +1,3 @@
+ryu==4.34
+networkx==2.4
+mininet==2.3.1b4
